@@ -396,7 +396,6 @@ class _HomeScreenState extends State<HomeScreen> {
           });
           return kit.map<Widget>((spell) {
             String spellImagePath = _getSpellImagePath(opponent, spell['nom'], spell['touche']);
-            print('🔍 HOME_SCREEN DEBUG: spellImagePath = "$spellImagePath" for ${spell['nom']}');
             
             return Container(
               margin: const EdgeInsets.only(bottom: 16),

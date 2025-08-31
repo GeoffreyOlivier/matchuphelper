@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -34,24 +33,10 @@ class OpenAIService extends ChangeNotifier {
 
   Future<void> _loadSpellMapping() async {
     try {
-      if (kDebugMode) {
-        print('🔄 DEBUG: Attempting to load spellmap_global.json...');
-      }
       
       final String jsonString = await rootBundle.loadString('data/spellmap_global.json');
       _spellMapping = jsonDecode(jsonString);
-      
-      if (kDebugMode) {
-        print('✅ DEBUG: Spell mapping loaded successfully from JSON!');
-        print('🔍 DEBUG: Champions count: ${_spellMapping!.keys.length}');
-        print('🔍 DEBUG: First 10 champions: ${_spellMapping!.keys.take(10).toList()}');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ DEBUG: Failed to load spellmap_global.json: $e');
-        print('🔍 DEBUG: Error type: ${e.runtimeType}');
-        print('🔍 DEBUG: Trying alternative asset paths...');
-      }
       
       // Essayer d'autres chemins
       List<String> alternativePaths = [
@@ -63,27 +48,15 @@ class OpenAIService extends ChangeNotifier {
       bool loaded = false;
       for (String path in alternativePaths) {
         try {
-          if (kDebugMode) {
-            print('🔍 DEBUG: Trying path: $path');
-          }
           final String jsonString = await rootBundle.loadString(path);
           _spellMapping = jsonDecode(jsonString);
-          if (kDebugMode) {
-            print('✅ DEBUG: Spell mapping loaded from: $path');
-          }
           loaded = true;
           break;
         } catch (e2) {
-          if (kDebugMode) {
-            print('❌ DEBUG: Path $path failed: $e2');
-          }
         }
       }
       
       if (!loaded) {
-        if (kDebugMode) {
-          print('❌ DEBUG: All paths failed, spell mapping will be null');
-        }
         _spellMapping = null;
       }
     }
@@ -98,27 +71,15 @@ class OpenAIService extends ChangeNotifier {
       await Directory(appResponsesDir).create(recursive: true);
       String appFilePath = path.join(appResponsesDir, fileName);
       await File(appFilePath).writeAsString(raw);
-      if (kDebugMode) {
-        print('🗒️ DEBUG: Saved RAW response to: $appFilePath');
-      }
 
       // Upload vers Firebase Storage (RAW)
       if (Firebase.apps.isNotEmpty) {
         try {
           final remotePath = 'chatgpt_responses/$fileName';
           await _uploadTextToFirebase(remotePath, raw, contentType: 'text/plain');
-          if (kDebugMode) {
-            print('☁️ DEBUG: Uploaded RAW to Firebase Storage: $remotePath');
-          }
         } catch (e) {
-          if (kDebugMode) {
-            print('⚠️ DEBUG: Failed to upload RAW to Firebase: $e');
-          }
         }
       } else {
-        if (kDebugMode) {
-          print('⏭️ DEBUG: Skipping RAW upload - Firebase not initialized');
-        }
       }
 
       // Mirror on desktop in debug
@@ -129,15 +90,9 @@ class OpenAIService extends ChangeNotifier {
           await Directory(projectResponsesDir).create(recursive: true);
           String projFilePath = path.join(projectResponsesDir, fileName);
           await File(projFilePath).writeAsString(raw);
-          if (kDebugMode) {
-            print('🗒️🖥️ DEBUG: Mirrored RAW response to project: $projFilePath');
-          }
         }
       } catch (_) {}
     } catch (e) {
-      if (kDebugMode) {
-        print('⚠️ DEBUG: Failed to save RAW response: $e');
-      }
     }
   }
 
@@ -155,6 +110,24 @@ class OpenAIService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // 0) If a previous response exists in Firebase Storage, use it instead of calling the API
+      if (Firebase.apps.isNotEmpty) {
+        try {
+          final fileName = _generateFileName(champion, opponent);
+          final ref = FirebaseStorage.instance.ref('chatgpt_responses/$fileName');
+          final data = await ref.getData(1024 * 1024); // up to 1MB
+          if (data != null) {
+            final cachedJson = utf8.decode(data);
+            // Set parsed response and formatted output
+            _lastParsedResponse = _parseMatchupResponse(cachedJson);
+            _lastResponse = _formatMatchupResponse(cachedJson);
+            return _lastResponse;
+          }
+        } catch (_) {
+          // ignore and fall back to API
+        }
+      }
+
       final response = await http.post(
         Uri.parse('https://api.openai.com/v1/chat/completions'),
         headers: {
@@ -182,31 +155,10 @@ class OpenAIService extends ChangeNotifier {
         final data = jsonDecode(response.body);
         final rawResponse = data['choices'][0]['message']['content'];
         
-        if (kDebugMode) {
-          print('🤖 DEBUG: ChatGPT Raw Response:');
-          print(rawResponse);
-          print('=' * 50);
-        }
-        
         // Parser la réponse JSON et la stocker
         _lastParsedResponse = _parseMatchupResponse(rawResponse);
         
-        if (kDebugMode) {
-          print('🔍 DEBUG: About to parse response...');
-          print('🔍 DEBUG: Raw response length: ${rawResponse.length}');
-          print('🔍 DEBUG: Parsed response is null: ${_lastParsedResponse == null}');
-          if (_lastParsedResponse != null) {
-            print('📊 DEBUG: Parsed JSON Response:');
-            print(jsonEncode(_lastParsedResponse));
-            print('=' * 50);
-          }
-        }
-        
         // Sauvegarder la réponse (JSON parsé si possible, sinon brut)
-        if (kDebugMode) {
-          print('💾 DEBUG: About to save response to file...');
-          print('💾 DEBUG: Champion: $champion, Opponent: $opponent');
-        }
 
         // Toujours sauvegarder la réponse brute pour debug
         await _saveRawResponseToFile(champion, opponent, rawResponse);
@@ -215,9 +167,6 @@ class OpenAIService extends ChangeNotifier {
         if (_lastParsedResponse != null) {
           await _saveResponseToFile(champion, opponent, _lastParsedResponse!);
         } else {
-          if (kDebugMode) {
-            print('❌ DEBUG: Cannot save parsed JSON - parsed response is null');
-          }
         }
         
         _lastResponse = _formatMatchupResponse(rawResponse);
@@ -251,17 +200,7 @@ class OpenAIService extends ChangeNotifier {
   }
 
   String getSpellImagePath(String championName, String spellName, [String? touche]) {
-    if (kDebugMode) {
-      print('🔍 DEBUG: Looking for spell image - Champion: "$championName", Spell: "$spellName", Touche: "${touche ?? 'null'}"');
-      print('🔍 DEBUG: Champion normalized: "${championName.toLowerCase()}"');
-      if (_spellMapping != null) {
-        print('🔍 DEBUG: Available champions in mapping: ${_spellMapping!.keys.toList()}');
-        if (_spellMapping![championName.toLowerCase()] != null) {
-          final championSpells = _spellMapping![championName.toLowerCase()] as Map<String, dynamic>;
-          print('🔍 DEBUG: Available spells for ${championName.toLowerCase()}: ${championSpells.keys.toList()}');
-        }
-      }
-    }
+    
     
     // Utiliser le mapping JSON si disponible
     if (_spellMapping != null && _spellMapping![championName.toLowerCase()] != null) {
@@ -315,12 +254,6 @@ class OpenAIService extends ChangeNotifier {
         }
       }
 
-      if (kDebugMode) {
-        print('🔍 DEBUG: Champion found in mapping. Available keys: ${championSpells.keys.toList()}');
-        print('🔍 DEBUG: Mapping key resolved: ${mappingKey ?? '(from full name match)'}');
-        print('🔍 DEBUG: Image filename resolved: $imageFileName');
-      }
-
       if (imageFileName != null) {
         // Dossier champion: minuscule, sans espaces/apostrophes/points/& et overrides éventuels
         final dirChampion = _championDirOverride(championName) ?? championName
@@ -330,9 +263,6 @@ class OpenAIService extends ChangeNotifier {
             .replaceAll('.', '')
             .replaceAll('&', '');
         final finalPath = 'assets/lol_champion_images/$dirChampion/$imageFileName';
-        if (kDebugMode) {
-          print('✅ DEBUG: Using mapped path: $finalPath');
-        }
         return finalPath;
       }
     }
@@ -362,9 +292,6 @@ class OpenAIService extends ChangeNotifier {
     final fallbackPath = isPassive
         ? 'assets/lol_champion_images/$dirChampion/passive.png'
         : 'assets/lol_champion_images/$dirChampion/spell_${championForFile}${suffix}.png';
-    if (kDebugMode) {
-      print('⚠️ DEBUG: Using improved fallback path: $fallbackPath');
-    }
     return fallbackPath;
   }
 
@@ -446,18 +373,10 @@ class OpenAIService extends ChangeNotifier {
 
   /// Sauvegarde la réponse JSON dans le dossier data/chatgpt_responses/
   Future<void> _saveResponseToFile(String champion, String opponent, Map<String, dynamic> response) async {
-    if (kDebugMode) {
-      print('🚀 DEBUG: _saveResponseToFile called!');
-      print('🚀 DEBUG: Champion: "$champion", Opponent: "$opponent"');
-      print('🚀 DEBUG: Response keys: ${response.keys.toList()}');
-    }
     
     try {
       // Générer le nom de fichier
       String fileName = _generateFileName(champion, opponent);
-      if (kDebugMode) {
-        print('📝 DEBUG: Generated filename: $fileName');
-      }
 
       // 1) Écriture dans Documents de l'application (toutes plateformes)
       Directory appDir = await getApplicationDocumentsDirectory();
@@ -467,9 +386,6 @@ class OpenAIService extends ChangeNotifier {
         await dirApp.create(recursive: true);
       }
       String appFilePath = path.join(appResponsesDir, fileName);
-      if (kDebugMode) {
-        print('📍 DEBUG: App documents path: $appFilePath');
-      }
       
       // Ajouter un timestamp à la réponse
       Map<String, dynamic> responseWithTimestamp = {
@@ -479,40 +395,21 @@ class OpenAIService extends ChangeNotifier {
         'opponent': opponent,
       };
       
-      if (kDebugMode) {
-        print('⏰ DEBUG: Added timestamp and metadata');
-      }
-      
       // Écrire le fichier JSON (Documents app)
       String jsonContent = jsonEncode(responseWithTimestamp);
       File appFile = File(appFilePath);
       await appFile.writeAsString(jsonContent);
       bool fileExistsApp = await appFile.exists();
       int fileSizeApp = fileExistsApp ? await appFile.length() : 0;
-      if (kDebugMode) {
-        print('✅ DEBUG: Wrote JSON to app docs');
-        print('💾 DEBUG: Path: $appFilePath');
-        print('📏 DEBUG: Exists: $fileExistsApp, Size: $fileSizeApp bytes');
-        print('📊 DEBUG: Content preview: ${jsonContent.substring(0, math.min(100, jsonContent.length))}...');
-      }
 
       // Upload vers Firebase Storage (JSON)
       if (Firebase.apps.isNotEmpty) {
         try {
           final remotePath = 'chatgpt_responses/$fileName';
           await _uploadTextToFirebase(remotePath, jsonContent, contentType: 'application/json');
-          if (kDebugMode) {
-            print('☁️ DEBUG: Uploaded JSON to Firebase Storage: $remotePath');
-          }
         } catch (e) {
-          if (kDebugMode) {
-            print('⚠️ DEBUG: Failed to upload JSON to Firebase: $e');
-          }
         }
       } else {
-        if (kDebugMode) {
-          print('⏭️ DEBUG: Skipping JSON upload - Firebase not initialized');
-        }
       }
 
       // 2) En debug desktop seulement: écriture miroir dans le dossier du projet
@@ -526,22 +423,11 @@ class OpenAIService extends ChangeNotifier {
           }
           String projFilePath = path.join(projectResponsesDir, fileName);
           await File(projFilePath).writeAsString(jsonContent);
-          if (kDebugMode) {
-            print('🖥️ DEBUG: Mirrored JSON to project folder: $projFilePath');
-          }
         }
       } catch (e) {
-        if (kDebugMode) {
-          print('⚠️ DEBUG: Failed to mirror to project folder: $e');
-        }
       }
       
     } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print('❌ DEBUG: Failed to save response to file: $e');
-        print('🔍 DEBUG: Error details: ${e.toString()}');
-        print('📚 DEBUG: Stack trace: $stackTrace');
-      }
     }
   }
 

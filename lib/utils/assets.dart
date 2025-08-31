@@ -1,13 +1,6 @@
-import 'package:flutter/foundation.dart';
-
 String championIconPath(String championName) {
   final dir = _championDirOverride(championName) ?? _normalizeChampionDir(championName);
   final path = 'assets/lol_champion_images/$dir/icon.jpg';
-  if (kDebugMode) {
-    // Log the exact path being requested for easier debugging
-    // ignore: avoid_print
-    print('🖼️ [ASSETS] Champion icon path for "$championName" => $path');
-  }
   return path;
 }
 

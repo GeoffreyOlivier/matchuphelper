@@ -11,22 +11,15 @@ void main() async {
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    // ignore: avoid_print
-    print('⚠️ DEBUG: dotenv load failed or .env missing/empty: $e');
+    // dotenv load failed; proceed without .env
   }
   // Initialize Firebase (uses platform config files: GoogleService-Info.plist / google-services.json)
-  bool firebaseReady = false;
   try {
     await Firebase.initializeApp();
-    firebaseReady = true;
     // Ensure we have an authenticated session (anonymous) for Firebase Storage rules
     await FirebaseAuth.instance.signInAnonymously();
-    // ignore: avoid_print
-    print('✅ DEBUG: Firebase initialized and anonymous sign-in succeeded');
   } catch (e) {
-    // ignore: avoid_print
-    print('⚠️ DEBUG: Firebase initialization failed: $e');
-    print('⚠️ DEBUG: Cloud upload will be skipped. Place GoogleService-Info.plist (iOS) and google-services.json (Android).');
+    // Firebase initialization failed; cloud upload will be skipped.
   }
   
   runApp(
