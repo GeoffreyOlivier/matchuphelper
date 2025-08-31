@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/openai_service.dart';
+import '../constants/champions.dart';
+import '../utils/assets.dart';
+import '../widgets/champion_selection_row.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,35 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
     'Support'
   ];
 
-  // This would typically come from a real API
-  final List<String> _champions = [
-    'Aatrox', 'Ahri', 'Akali', 'Akshan', 'Alistar', 'Amumu', 'Anivia', 'Annie',
-    'Aphelios', 'Ashe', 'Aurelion Sol', 'Azir', 'Bard', 'Bel\'Veth', 'Blitzcrank',
-    'Brand', 'Braum', 'Caitlyn', 'Camille', 'Cassiopeia', 'Cho\'Gath', 'Corki',
-    'Darius', 'Diana', 'Dr. Mundo', 'Draven', 'Ekko', 'Elise', 'Evelynn', 'Ezreal',
-    'Fiddlesticks', 'Fiora', 'Fizz', 'Galio', 'Gangplank', 'Garen', 'Gnar',
-    'Gragas', 'Graves', 'Gwen', 'Hecarim', 'Heimerdinger', 'Illaoi', 'Irelia',
-    'Ivern', 'Janna', 'Jarvan IV', 'Jax', 'Jayce', 'Jhin', 'Jinx', 'Kai\'Sa',
-    'Kalista', 'Karma', 'Karthus', 'Kassadin', 'Katarina', 'Kayle', 'Kayn',
-    'Kennen', 'Kha\'Zix', 'Kindred', 'Kled', 'Kog\'Maw', 'LeBlanc', 'Lee Sin',
-    'Leona', 'Lillia', 'Lissandra', 'Lucian', 'Lulu', 'Lux', 'Malphite',
-    'Malzahar', 'Maokai', 'Master Yi', 'Miss Fortune', 'Mordekaiser', 'Morgana',
-    'Nami', 'Nasus', 'Nautilus', 'Neeko', 'Nidalee', 'Nocturne', 'Nunu & Willump',
-    'Olaf', 'Orianna', 'Ornn', 'Pantheon', 'Poppy', 'Pyke', 'Qiyana', 'Quinn',
-    'Rakan', 'Rammus', 'Rek\'Sai', 'Rell', 'Renata Glasc', 'Renekton', 'Rengar',
-    'Riven', 'Rumble', 'Ryze', 'Samira', 'Sejuani', 'Senna', 'Seraphine',
-    'Sett', 'Shaco', 'Shen', 'Shyvana', 'Singed', 'Sion', 'Sivir', 'Skarner',
-    'Sona', 'Soraka', 'Swain', 'Sylas', 'Syndra', 'Tahm Kench', 'Taliyah',
-    'Talon', 'Taric', 'Teemo', 'Thresh', 'Tristana', 'Trundle', 'Tryndamere',
-    'Twisted Fate', 'Twitch', 'Udyr', 'Urgot', 'Varus', 'Vayne', 'Veigar',
-    'Vel\'Koz', 'Vex', 'Vi', 'Viego', 'Viktor', 'Vladimir', 'Volibear',
-    'Warwick', 'Wukong', 'Xayah', 'Xerath', 'Xin Zhao', 'Yasuo', 'Yone',
-    'Yorick', 'Yuumi', 'Zac', 'Zed', 'Zeri', 'Ziggs', 'Zilean', 'Zoe', 'Zyra'
-  ];
-
   List<String> get _filteredChampions {
     if (_selectedLetter == null) return [];
-    return _champions
+    return champions
         .where((champion) => champion.toLowerCase().startsWith(_selectedLetter!.toLowerCase()))
         .toList();
   }
@@ -84,6 +61,12 @@ class _HomeScreenState extends State<HomeScreen> {
     // Responsive card size for champion squares (slightly smaller)
     final double screenWidth = MediaQuery.of(context).size.width;
     final double cardSize = (screenWidth * 0.32).clamp(110.0, 140.0);
+    // Shared layout metrics to align edges across sections
+    const int kColumns = 5; // champions grid columns
+    const int kAlphabetColumns = 7; // alphabet grid columns
+    const double kSpacing = 12;
+    const double kChampionTile = 70; // tile width used by champions grid
+    final double gridMaxWidth = kColumns * kChampionTile + (kColumns - 1) * kSpacing;
 
     return Scaffold(
       appBar: AppBar(
@@ -97,59 +80,139 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Champion Selection Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              // Champion Selection Row (centered, aligned to shared max width)
+              Align(
+                alignment: Alignment.center,
+                child: ChampionSelectionRow(
+                  cardSize: cardSize,
+                  selectingForChampion: _selectingForChampion,
+                  selectedChampion: _selectedChampion,
+                  selectedOpponent: _selectedOpponent,
+                  onTapChampionSide: () {
+                    setState(() {
+                      _selectingForChampion = true;
+                      _selectedLetter = null;
+                    });
+                  },
+                  onTapOpponentSide: () {
+                    setState(() {
+                      _selectingForChampion = false;
+                      _selectedLetter = null;
+                    });
+                  },
+                  maxWidth: gridMaxWidth,
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Alphabet Grid — aligned to the same shared max width, 6 columns for better density
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Your Champion Input (Left)
-                  SizedBox(
-                    width: cardSize,
-                    child: Column(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectingForChampion = true;
-                              _selectedLetter = null;
-                            });
-                          },
-                          child: AspectRatio(
-                            aspectRatio: 1,
-                            child: Container(
-                              padding: EdgeInsets.zero,
-                              decoration: BoxDecoration(
-                                color: Colors.black,
-                                border: Border.all(
-                                  // Highlight LEFT when selecting your champion
-                                  color: _selectingForChampion
-                                      ? selectedBorderColor
-                                      : Colors.grey[700]!,
-                                  width: _selectingForChampion ? 2 : 1,
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.center,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: gridMaxWidth),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: kAlphabetColumns,
+                          crossAxisSpacing: kSpacing,
+                          mainAxisSpacing: kSpacing,
+                          mainAxisExtent: 40,
+                        ),
+                        itemCount: 26,
+                        itemBuilder: (context, index) {
+                          final letter = String.fromCharCode('A'.codeUnitAt(0) + index);
+                          final hasChampions = champions.any((c) =>
+                              c.toLowerCase().startsWith(letter.toLowerCase()));
+                          return Center(
+                            child: GestureDetector(
+                              onTap: hasChampions ? () => _selectLetter(letter) : null,
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF111111),
+                                  border: Border.all(
+                                    color: _selectedLetter == letter
+                                        ? const Color(0xFFc2902a)
+                                        : hasChampions
+                                            ? Colors.grey[600]!
+                                            : Colors.grey[500]!,
+                                    width: _selectedLetter == letter ? 2 : 1,
+                                  ),
+                                  borderRadius: BorderRadius.zero,
                                 ),
-                                boxShadow: _selectingForChampion
-                                    ? [
-                                        BoxShadow(
-                                          color: selectedBorderColor.withOpacity(0.4),
-                                          blurRadius: 6,
-                                          spreadRadius: 0.5,
-                                        ),
-                                      ]
-                                    : null,
-                                borderRadius: BorderRadius.zero,
+                                child: Center(
+                                  child: Text(
+                                    letter,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: _selectedLetter == letter
+                                          ? Colors.white
+                                          : hasChampions
+                                              ? Colors.white
+                                              : Colors.grey[500],
+                                    ),
+                                  ),
+                                ),
                               ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.zero,
-                                child: _selectedChampion != null
-                                    ? Image.asset(
-                                        _getChampionIconPath(_selectedChampion!),
-                                        width: double.infinity,
-                                        height: double.infinity,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              // Champions List (images + names) — 5 columns grid
+              if (_selectedLetter != null && _filteredChampions.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    const int columns = kColumns;
+                    const double spacing = kSpacing;
+                    final double _gridMaxWidth = gridMaxWidth;
+                    return Align(
+                      alignment: Alignment.center,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: _gridMaxWidth),
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            crossAxisSpacing: spacing,
+                            mainAxisSpacing: spacing,
+                            mainAxisExtent: 110,
+                          ),
+                          itemCount: _filteredChampions.length,
+                          itemBuilder: (context, index) {
+                            final champion = _filteredChampions[index];
+                            return GestureDetector(
+                              onTap: () => _selectChampion(champion),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: double.infinity,
+                                    height: 70,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      border: Border.all(color: Colors.grey[700]!),
+                                      borderRadius: BorderRadius.zero,
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.zero,
+                                      child: Image.asset(
+                                        championIconPath(champion),
                                         fit: BoxFit.cover,
                                         errorBuilder: (context, error, stackTrace) {
-                                          final failing = _getChampionIconPath(_selectedChampion!);
-                                          // Log failing path for debugging
-                                          // ignore: avoid_print
-                                          print('❌ [HOME_SCREEN] Failed to load selected champion image: ' + failing + ' -> ' + error.toString());
                                           return Center(
                                             child: Icon(
                                               Icons.image_not_supported,
@@ -158,262 +221,29 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                           );
                                         },
-                                      )
-                                    : Center(
-                                        child: Text(
-                                          '?',
-                                          style: TextStyle(
-                                            fontSize: 40,
-                                            color: Colors.grey[400],
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
                                       ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Mon champion',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey[400],
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // VS Image
-                  SizedBox(
-                    height: cardSize,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
-                          borderRadius: BorderRadius.zero,
-                        ),
-                        child: Image.asset(
-                          'assets/images/vs.png',
-                          width: 70,
-                          height: 70,
-                          errorBuilder: (context, error, stackTrace) {
-                            // Fallback au texte si l'image n'est pas trouvée
-                            return const Text(
-                              'VS',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    champion,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           },
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Enemy Champion Input (Right)
-                  SizedBox(
-                    width: cardSize,
-                    child: Column(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectingForChampion = false;
-                              _selectedLetter = null;
-                            });
-                          },
-                          child: AspectRatio(
-                            aspectRatio: 1,
-                            child: Container(
-                              padding: EdgeInsets.zero,
-                              decoration: BoxDecoration(
-                                color: Colors.black,
-                                border: Border.all(
-                                  // Highlight RIGHT when selecting the opponent
-                                  color: !_selectingForChampion
-                                      ? selectedBorderColor
-                                      : Colors.grey[700]!,
-                                  width: !_selectingForChampion ? 2 : 1,
-                                ),
-                                boxShadow: !_selectingForChampion
-                                    ? [
-                                        BoxShadow(
-                                          color: selectedBorderColor.withOpacity(0.4),
-                                          blurRadius: 6,
-                                          spreadRadius: 0.5,
-                                        ),
-                                      ]
-                                    : null,
-                                borderRadius: BorderRadius.zero,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.zero,
-                                child: _selectedOpponent != null
-                                    ? Image.asset(
-                                        _getChampionIconPath(_selectedOpponent!),
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          final failing = _getChampionIconPath(_selectedOpponent!);
-                                          // ignore: avoid_print
-                                          print('❌ [HOME_SCREEN] Failed to load opponent image: ' + failing + ' -> ' + error.toString());
-                                          return Center(
-                                            child: Icon(
-                                              Icons.image_not_supported,
-                                              color: Colors.grey[500],
-                                              size: 32,
-                                            ),
-                                          );
-                                        },
-                                      )
-                                    : Center(
-                                        child: Text(
-                                          '?',
-                                          style: TextStyle(
-                                            fontSize: 40,
-                                            color: Colors.grey[400],
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Adversaire',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey[400],
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              
-              // Alphabet Grid (container removed to eliminate background block)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Wrap(
-                      alignment: WrapAlignment.start,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((letter) {
-                      final hasChampions = _champions.any((champion) => 
-                          champion.toLowerCase().startsWith(letter.toLowerCase()));
-                      return GestureDetector(
-                        onTap: hasChampions ? () => _selectLetter(letter) : null,
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF111111),
-                            border: Border.all(
-                              color: _selectedLetter == letter
-                                  ? const Color(0xFFc2902a)
-                                  : hasChampions
-                                      ? Colors.grey[600]!
-                                      : Colors.grey[500]!,
-                              width: _selectedLetter == letter ? 2 : 1,
-                            ),
-                            borderRadius: BorderRadius.zero,
-                          ),
-                          child: Center(
-                            child: Text(
-                              letter,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: _selectedLetter == letter
-                                    ? Colors.white
-                                    : hasChampions
-                                        ? Colors.white
-                                        : Colors.grey[500],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-              
-              // Champions List (images + names)
-              if (_selectedLetter != null && _filteredChampions.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: _filteredChampions.map((champion) {
-                    return GestureDetector(
-                      onTap: () => _selectChampion(champion),
-                      child: SizedBox(
-                        width: 70,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                color: Colors.black,
-                                border: Border.all(color: Colors.grey[700]!),
-                                borderRadius: BorderRadius.zero,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.zero,
-                                child: Image.asset(
-                                  _getChampionIconPath(champion),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    final failing = _getChampionIconPath(champion);
-                                    // ignore: avoid_print
-                                    print('❌ [HOME_SCREEN] Failed to load list item image: ' + failing + ' -> ' + error.toString());
-                                    return Center(
-                                      child: Icon(
-                                        Icons.image_not_supported,
-                                        color: Colors.grey[500],
-                                        size: 28,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              champion,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     );
-                  }).toList(),
+                  },
                 ),
               ],
               
@@ -423,14 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Lane',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
+                  
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -766,30 +589,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Build champion icon path: assets/lol_champion_images/<normalized>/icon.jpg
   String _getChampionIconPath(String championName) {
-    final dir = _championDirOverride(championName) ?? _normalizeChampionDir(championName);
-    final path = 'assets/lol_champion_images/$dir/icon.jpg';
-    // Log the exact path being requested for easier debugging
-    print('🖼️ [HOME_SCREEN] Champion icon path for "$championName" => $path');
-    return path;
-  }
-
-  String _normalizeChampionDir(String name) {
-    return name
-        .toLowerCase()
-        .replaceAll(' ', '')
-        .replaceAll("'", '')
-        .replaceAll('.', '')
-        .replaceAll('&', '');
-  }
-
-  // Some champions have folder names that don't exactly match their display names
-  String? _championDirOverride(String name) {
-    const overrides = {
-      'Wukong': 'monkeyking',
-      'Renata Glasc': 'renata',
-      'Nunu & Willump': 'nunu',
-    };
-    return overrides[name];
+    // Deprecated: kept for backward compatibility if referenced elsewhere.
+    return championIconPath(championName);
   }
 
 }

@@ -8,7 +8,12 @@ import 'services/openai_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    // ignore: avoid_print
+    print('⚠️ DEBUG: dotenv load failed or .env missing/empty: $e');
+  }
   // Initialize Firebase (uses platform config files: GoogleService-Info.plist / google-services.json)
   bool firebaseReady = false;
   try {
