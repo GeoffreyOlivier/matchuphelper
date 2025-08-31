@@ -1,0 +1,444 @@
+name: lol_matchup_helper
+description: "A League of Legends matchup helper app with ChatGPT integration"
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  http: ^1.1.0
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
+  flutter_dotenv: ^5.1.0
+  path_provider: ^2.1.1
+  path: ^1.8.3
+  firebase_core: ^3.5.0
+  firebase_storage: ^12.3.0
+  firebase_auth: ^5.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^5.0.0
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - .env
+    - assets/images/
+    - assets/lol_champion_images/aatrox/icon.jpg
+    - assets/lol_champion_images/ahri/icon.jpg
+    - assets/lol_champion_images/akali/icon.jpg
+    - assets/lol_champion_images/akshan/icon.jpg
+    - assets/lol_champion_images/alistar/icon.jpg
+    - assets/lol_champion_images/ambessa/icon.jpg
+    - assets/lol_champion_images/amumu/icon.jpg
+    - assets/lol_champion_images/anivia/icon.jpg
+    - assets/lol_champion_images/annie/icon.jpg
+    - assets/lol_champion_images/aphelios/icon.jpg
+    - assets/lol_champion_images/ashe/icon.jpg
+    - assets/lol_champion_images/aurelionsol/icon.jpg
+    - assets/lol_champion_images/aurora/icon.jpg
+    - assets/lol_champion_images/azir/icon.jpg
+    - assets/lol_champion_images/bard/icon.jpg
+    - assets/lol_champion_images/belveth/icon.jpg
+    - assets/lol_champion_images/blitzcrank/icon.jpg
+    - assets/lol_champion_images/brand/icon.jpg
+    - assets/lol_champion_images/braum/icon.jpg
+    - assets/lol_champion_images/briar/icon.jpg
+    - assets/lol_champion_images/caitlyn/icon.jpg
+    - assets/lol_champion_images/camille/icon.jpg
+    - assets/lol_champion_images/cassiopeia/icon.jpg
+    - assets/lol_champion_images/chogath/icon.jpg
+    - assets/lol_champion_images/corki/icon.jpg
+    - assets/lol_champion_images/darius/icon.jpg
+    - assets/lol_champion_images/diana/icon.jpg
+    - assets/lol_champion_images/draven/icon.jpg
+    - assets/lol_champion_images/drmundo/icon.jpg
+    - assets/lol_champion_images/ekko/icon.jpg
+    - assets/lol_champion_images/elise/icon.jpg
+    - assets/lol_champion_images/evelynn/icon.jpg
+    - assets/lol_champion_images/ezreal/icon.jpg
+    - assets/lol_champion_images/fiddlesticks/icon.jpg
+    - assets/lol_champion_images/fiora/icon.jpg
+    - assets/lol_champion_images/fizz/icon.jpg
+    - assets/lol_champion_images/galio/icon.jpg
+    - assets/lol_champion_images/gangplank/icon.jpg
+    - assets/lol_champion_images/garen/icon.jpg
+    - assets/lol_champion_images/gnar/icon.jpg
+    - assets/lol_champion_images/gragas/icon.jpg
+    - assets/lol_champion_images/graves/icon.jpg
+    - assets/lol_champion_images/gwen/icon.jpg
+    - assets/lol_champion_images/hecarim/icon.jpg
+    - assets/lol_champion_images/heimerdinger/icon.jpg
+    - assets/lol_champion_images/hwei/icon.jpg
+    - assets/lol_champion_images/illaoi/icon.jpg
+    - assets/lol_champion_images/irelia/icon.jpg
+    - assets/lol_champion_images/ivern/icon.jpg
+    - assets/lol_champion_images/janna/icon.jpg
+    - assets/lol_champion_images/jarvaniv/icon.jpg
+    - assets/lol_champion_images/jax/icon.jpg
+    - assets/lol_champion_images/jayce/icon.jpg
+    - assets/lol_champion_images/jhin/icon.jpg
+    - assets/lol_champion_images/jinx/icon.jpg
+    - assets/lol_champion_images/kaisa/icon.jpg
+    - assets/lol_champion_images/kalista/icon.jpg
+    - assets/lol_champion_images/karma/icon.jpg
+    - assets/lol_champion_images/karthus/icon.jpg
+    - assets/lol_champion_images/kassadin/icon.jpg
+    - assets/lol_champion_images/katarina/icon.jpg
+    - assets/lol_champion_images/kayle/icon.jpg
+    - assets/lol_champion_images/kayn/icon.jpg
+    - assets/lol_champion_images/kennen/icon.jpg
+    - assets/lol_champion_images/khazix/icon.jpg
+    - assets/lol_champion_images/kindred/icon.jpg
+    - assets/lol_champion_images/kled/icon.jpg
+    - assets/lol_champion_images/kogmaw/icon.jpg
+    - assets/lol_champion_images/ksante/icon.jpg
+    - assets/lol_champion_images/leblanc/icon.jpg
+    - assets/lol_champion_images/leesin/icon.jpg
+    - assets/lol_champion_images/leona/icon.jpg
+    - assets/lol_champion_images/lillia/icon.jpg
+    - assets/lol_champion_images/lissandra/icon.jpg
+    - assets/lol_champion_images/lucian/icon.jpg
+    - assets/lol_champion_images/lulu/icon.jpg
+    - assets/lol_champion_images/lux/icon.jpg
+    - assets/lol_champion_images/malphite/icon.jpg
+    - assets/lol_champion_images/malzahar/icon.jpg
+    - assets/lol_champion_images/maokai/icon.jpg
+    - assets/lol_champion_images/masteryi/icon.jpg
+    - assets/lol_champion_images/mel/icon.jpg
+    - assets/lol_champion_images/milio/icon.jpg
+    - assets/lol_champion_images/missfortune/icon.jpg
+    - assets/lol_champion_images/monkeyking/icon.jpg
+    - assets/lol_champion_images/mordekaiser/icon.jpg
+    - assets/lol_champion_images/morgana/icon.jpg
+    - assets/lol_champion_images/naafiri/icon.jpg
+    - assets/lol_champion_images/nami/icon.jpg
+    - assets/lol_champion_images/nasus/icon.jpg
+    - assets/lol_champion_images/nautilus/icon.jpg
+    - assets/lol_champion_images/neeko/icon.jpg
+    - assets/lol_champion_images/nidalee/icon.jpg
+    - assets/lol_champion_images/nilah/icon.jpg
+    - assets/lol_champion_images/nocturne/icon.jpg
+    - assets/lol_champion_images/nunu/icon.jpg
+    - assets/lol_champion_images/olaf/icon.jpg
+    - assets/lol_champion_images/orianna/icon.jpg
+    - assets/lol_champion_images/ornn/icon.jpg
+    - assets/lol_champion_images/pantheon/icon.jpg
+    - assets/lol_champion_images/poppy/icon.jpg
+    - assets/lol_champion_images/pyke/icon.jpg
+    - assets/lol_champion_images/qiyana/icon.jpg
+    - assets/lol_champion_images/quinn/icon.jpg
+    - assets/lol_champion_images/rakan/icon.jpg
+    - assets/lol_champion_images/rammus/icon.jpg
+    - assets/lol_champion_images/reksai/icon.jpg
+    - assets/lol_champion_images/rell/icon.jpg
+    - assets/lol_champion_images/renata/icon.jpg
+    - assets/lol_champion_images/renekton/icon.jpg
+    - assets/lol_champion_images/rengar/icon.jpg
+    - assets/lol_champion_images/riven/icon.jpg
+    - assets/lol_champion_images/rumble/icon.jpg
+    - assets/lol_champion_images/ryze/icon.jpg
+    - assets/lol_champion_images/samira/icon.jpg
+    - assets/lol_champion_images/sejuani/icon.jpg
+    - assets/lol_champion_images/senna/icon.jpg
+    - assets/lol_champion_images/seraphine/icon.jpg
+    - assets/lol_champion_images/sett/icon.jpg
+    - assets/lol_champion_images/shaco/icon.jpg
+    - assets/lol_champion_images/shen/icon.jpg
+    - assets/lol_champion_images/shyvana/icon.jpg
+    - assets/lol_champion_images/singed/icon.jpg
+    - assets/lol_champion_images/sion/icon.jpg
+    - assets/lol_champion_images/sivir/icon.jpg
+    - assets/lol_champion_images/skarner/icon.jpg
+    - assets/lol_champion_images/smolder/icon.jpg
+    - assets/lol_champion_images/sona/icon.jpg
+    - assets/lol_champion_images/soraka/icon.jpg
+    - assets/lol_champion_images/swain/icon.jpg
+    - assets/lol_champion_images/sylas/icon.jpg
+    - assets/lol_champion_images/syndra/icon.jpg
+    - assets/lol_champion_images/tahmkench/icon.jpg
+    - assets/lol_champion_images/taliyah/icon.jpg
+    - assets/lol_champion_images/talon/icon.jpg
+    - assets/lol_champion_images/taric/icon.jpg
+    - assets/lol_champion_images/teemo/icon.jpg
+    - assets/lol_champion_images/thresh/icon.jpg
+    - assets/lol_champion_images/tristana/icon.jpg
+    - assets/lol_champion_images/trundle/icon.jpg
+    - assets/lol_champion_images/tryndamere/icon.jpg
+    - assets/lol_champion_images/twistedfate/icon.jpg
+    - assets/lol_champion_images/twitch/icon.jpg
+    - assets/lol_champion_images/udyr/icon.jpg
+    - assets/lol_champion_images/urgot/icon.jpg
+    - assets/lol_champion_images/varus/icon.jpg
+    - assets/lol_champion_images/vayne/icon.jpg
+    - assets/lol_champion_images/veigar/icon.jpg
+    - assets/lol_champion_images/velkoz/icon.jpg
+    - assets/lol_champion_images/vex/icon.jpg
+    - assets/lol_champion_images/vi/icon.jpg
+    - assets/lol_champion_images/viego/icon.jpg
+    - assets/lol_champion_images/viktor/icon.jpg
+    - assets/lol_champion_images/vladimir/icon.jpg
+    - assets/lol_champion_images/volibear/icon.jpg
+    - assets/lol_champion_images/warwick/icon.jpg
+    - assets/lol_champion_images/xayah/icon.jpg
+    - assets/lol_champion_images/xerath/icon.jpg
+    - assets/lol_champion_images/xinzhao/icon.jpg
+    - assets/lol_champion_images/yasuo/icon.jpg
+    - assets/lol_champion_images/yone/icon.jpg
+    - assets/lol_champion_images/yorick/icon.jpg
+    - assets/lol_champion_images/yunara/icon.jpg
+    - assets/lol_champion_images/yuumi/icon.jpg
+    - assets/lol_champion_images/zac/icon.jpg
+    - assets/lol_champion_images/zed/icon.jpg
+    - assets/lol_champion_images/zeri/icon.jpg
+    - assets/lol_champion_images/ziggs/icon.jpg
+    - assets/lol_champion_images/zilean/icon.jpg
+    - assets/lol_champion_images/zoe/icon.jpg
+    - assets/lol_champion_images/zyra/icon.jpg
+    - assets/lol_champion_images/aatrox/
+    - assets/lol_champion_images/ahri/
+    - assets/lol_champion_images/akali/
+    - assets/lol_champion_images/akshan/
+    - assets/lol_champion_images/alistar/
+    - assets/lol_champion_images/ambessa/
+    - assets/lol_champion_images/amumu/
+    - assets/lol_champion_images/anivia/
+    - assets/lol_champion_images/annie/
+    - assets/lol_champion_images/aphelios/
+    - assets/lol_champion_images/ashe/
+    - assets/lol_champion_images/aurelionsol/
+    - assets/lol_champion_images/aurora/
+    - assets/lol_champion_images/azir/
+    - assets/lol_champion_images/bard/
+    - assets/lol_champion_images/belveth/
+    - assets/lol_champion_images/blitzcrank/
+    - assets/lol_champion_images/brand/
+    - assets/lol_champion_images/braum/
+    - assets/lol_champion_images/briar/
+    - assets/lol_champion_images/caitlyn/
+    - assets/lol_champion_images/camille/
+    - assets/lol_champion_images/cassiopeia/
+    - assets/lol_champion_images/chogath/
+    - assets/lol_champion_images/corki/
+    - assets/lol_champion_images/darius/
+    - assets/lol_champion_images/diana/
+    - assets/lol_champion_images/draven/
+    - assets/lol_champion_images/drmundo/
+    - assets/lol_champion_images/ekko/
+    - assets/lol_champion_images/elise/
+    - assets/lol_champion_images/evelynn/
+    - assets/lol_champion_images/ezreal/
+    - assets/lol_champion_images/fiddlesticks/
+    - assets/lol_champion_images/fiora/
+    - assets/lol_champion_images/fizz/
+    - assets/lol_champion_images/galio/
+    - assets/lol_champion_images/gangplank/
+    - assets/lol_champion_images/garen/
+    - assets/lol_champion_images/gnar/
+    - assets/lol_champion_images/gragas/
+    - assets/lol_champion_images/graves/
+    - assets/lol_champion_images/gwen/
+    - assets/lol_champion_images/hecarim/
+    - assets/lol_champion_images/heimerdinger/
+    - assets/lol_champion_images/hwei/
+    - assets/lol_champion_images/illaoi/
+    - assets/lol_champion_images/irelia/
+    - assets/lol_champion_images/ivern/
+    - assets/lol_champion_images/janna/
+    - assets/lol_champion_images/jarvaniv/
+    - assets/lol_champion_images/jax/
+    - assets/lol_champion_images/jayce/
+    - assets/lol_champion_images/jhin/
+    - assets/lol_champion_images/jinx/
+    - assets/lol_champion_images/kaisa/
+    - assets/lol_champion_images/kalista/
+    - assets/lol_champion_images/karma/
+    - assets/lol_champion_images/karthus/
+    - assets/lol_champion_images/kassadin/
+    - assets/lol_champion_images/katarina/
+    - assets/lol_champion_images/kayle/
+    - assets/lol_champion_images/kayn/
+    - assets/lol_champion_images/kennen/
+    - assets/lol_champion_images/khazix/
+    - assets/lol_champion_images/kindred/
+    - assets/lol_champion_images/kled/
+    - assets/lol_champion_images/kogmaw/
+    - assets/lol_champion_images/ksante/
+    - assets/lol_champion_images/leblanc/
+    - assets/lol_champion_images/leesin/
+    - assets/lol_champion_images/leona/
+    - assets/lol_champion_images/lillia/
+    - assets/lol_champion_images/lissandra/
+    - assets/lol_champion_images/lucian/
+    - assets/lol_champion_images/lulu/
+    - assets/lol_champion_images/lux/
+    - assets/lol_champion_images/malphite/
+    - assets/lol_champion_images/malzahar/
+    - assets/lol_champion_images/maokai/
+    - assets/lol_champion_images/masteryi/
+    - assets/lol_champion_images/mel/
+    - assets/lol_champion_images/milio/
+    - assets/lol_champion_images/missfortune/
+    - assets/lol_champion_images/monkeyking/
+    - assets/lol_champion_images/mordekaiser/
+    - assets/lol_champion_images/morgana/
+    - assets/lol_champion_images/naafiri/
+    - assets/lol_champion_images/nami/
+    - assets/lol_champion_images/nasus/
+    - assets/lol_champion_images/nautilus/
+    - assets/lol_champion_images/neeko/
+    - assets/lol_champion_images/nidalee/
+    - assets/lol_champion_images/nilah/
+    - assets/lol_champion_images/nocturne/
+    - assets/lol_champion_images/nunu/
+    - assets/lol_champion_images/olaf/
+    - assets/lol_champion_images/orianna/
+    - assets/lol_champion_images/ornn/
+    - assets/lol_champion_images/pantheon/
+    - assets/lol_champion_images/poppy/
+    - assets/lol_champion_images/pyke/
+    - assets/lol_champion_images/qiyana/
+    - assets/lol_champion_images/quinn/
+    - assets/lol_champion_images/rakan/
+    - assets/lol_champion_images/rammus/
+    - assets/lol_champion_images/reksai/
+    - assets/lol_champion_images/rell/
+    - assets/lol_champion_images/renata/
+    - assets/lol_champion_images/renekton/
+    - assets/lol_champion_images/rengar/
+    - assets/lol_champion_images/riven/
+    - assets/lol_champion_images/rumble/
+    - assets/lol_champion_images/ryze/
+    - assets/lol_champion_images/samira/
+    - assets/lol_champion_images/sejuani/
+    - assets/lol_champion_images/senna/
+    - assets/lol_champion_images/seraphine/
+    - assets/lol_champion_images/sett/
+    - assets/lol_champion_images/shaco/
+    - assets/lol_champion_images/shen/
+    - assets/lol_champion_images/shyvana/
+    - assets/lol_champion_images/singed/
+    - assets/lol_champion_images/sion/
+    - assets/lol_champion_images/sivir/
+    - assets/lol_champion_images/skarner/
+    - assets/lol_champion_images/smolder/
+    - assets/lol_champion_images/sona/
+    - assets/lol_champion_images/soraka/
+    - assets/lol_champion_images/swain/
+    - assets/lol_champion_images/sylas/
+    - assets/lol_champion_images/syndra/
+    - assets/lol_champion_images/tahmkench/
+    - assets/lol_champion_images/taliyah/
+    - assets/lol_champion_images/talon/
+    - assets/lol_champion_images/taric/
+    - assets/lol_champion_images/teemo/
+    - assets/lol_champion_images/thresh/
+    - assets/lol_champion_images/tristana/
+    - assets/lol_champion_images/trundle/
+    - assets/lol_champion_images/tryndamere/
+    - assets/lol_champion_images/twistedfate/
+    - assets/lol_champion_images/twitch/
+    - assets/lol_champion_images/udyr/
+    - assets/lol_champion_images/urgot/
+    - assets/lol_champion_images/varus/
+    - assets/lol_champion_images/vayne/
+    - assets/lol_champion_images/veigar/
+    - assets/lol_champion_images/velkoz/
+    - assets/lol_champion_images/vex/
+    - assets/lol_champion_images/vi/
+    - assets/lol_champion_images/viego/
+    - assets/lol_champion_images/viktor/
+    - assets/lol_champion_images/vladimir/
+    - assets/lol_champion_images/volibear/
+    - assets/lol_champion_images/warwick/
+    - assets/lol_champion_images/xayah/
+    - assets/lol_champion_images/xerath/
+    - assets/lol_champion_images/xinzhao/
+    - assets/lol_champion_images/yasuo/
+    - assets/lol_champion_images/yone/
+    - assets/lol_champion_images/yorick/
+    - assets/lol_champion_images/yunara/
+    - assets/lol_champion_images/yuumi/
+    - assets/lol_champion_images/zac/
+    - assets/lol_champion_images/zed/
+    - assets/lol_champion_images/zeri/
+    - assets/lol_champion_images/ziggs/
+    - assets/lol_champion_images/zilean/
+    - assets/lol_champion_images/zoe/
+    - assets/lol_champion_images/zyra/
+    - data/spellmap_global.json
+
+  # Custom fonts
+  fonts:
+    - family: Beaufort
+      fonts:
+        - asset: assets/font/Beaufort.otf
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/to/resolution-aware-images
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/to/asset-from-package
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/to/font-from-package
