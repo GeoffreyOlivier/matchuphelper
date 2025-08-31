@@ -48,3 +48,9 @@ app.*.symbols
 ios/GoogleService-Info.plist
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
+
+# OS/IDE noise
+.DS_Store
+**/.DS_Store
+.idea/
+*.iml
