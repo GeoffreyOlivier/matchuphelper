@@ -17,18 +17,44 @@ class OpenAIClient {
         'Authorization': 'Bearer $apiKey',
       },
       body: jsonEncode({
-        'model': 'gpt-4o',
+        'model': 'gpt-4.1',
+        // Optionnel mais utile pour forcer du JSON valide
+        'response_format': {'type': 'json_object'},
         'messages': [
           {
             'role': 'system',
-            'content': 'Tu es coach sur League of Legends (patch 25.X). Réponds toujours de façon structurée et concise sans traduire les termes anglais, sans dépasser 800 tokens. Respecte **strictement** cette structure de réponse :\n\n{\n  "matchup": "$champion vs $opponent sur la lane $lane",\n  "kit_de_$opponent": [\n    {\n      "nom": "Nom du sort",\n      "touche": "Q / W / E / R / Passive",\n      "description": "Effet du sort",\n      "si_danger_pour_$champion": "Pourquoi ce sort est dangereux"\n    }\n  ],\n  "style_de_jeu_conseillé": {\n    "early": "Conseil pour les premiers niveaux",\n    "mid_game": "Conseil vers le niveau 6",\n    "late_game": "Conseil si la partie dure"\n  }\n}\nRéponds uniquement sous cette forme.'
+            'content': """
+Tu es coach sur League of Legends (patch 25.X). Réponds uniquement en JSON strict, concis, sans traduire les termes anglais, ≤ 800 tokens.
+
+Règles générales :
+- Liste toutes les compétences de $opponent, mais ajoute une "consigne" uniquement si le sort est réellement menaçant pour $champion sur la lane $lane.
+- Si un sort est peu dangereux/situationnel, n'inclus pas le champ "consigne".
+- Les consignes sont opérationnelles (verbes d'action), 1 phrase max.
+- Pas de texte hors JSON.
+
+Structure de sortie attendue :
+{
+  "matchup": "$champion vs $opponent sur la lane $lane",
+  "kit_de_$opponent": [
+    {
+      "nom": "Nom du sort",
+      "touche": "Passive | Q | W | E | R",
+      "effet_court": "Effet très concis (1 phrase max).",
+      "consigne": "Action concrète si stun, cc, knock up . Omettre ce champ si non dangereux."
+    }
+  ],
+  "laning_vs_$opponent": "Dit si il est fort avant le level 3 ou non. Conseils pratiques pour gérer la lane (warding, timings de trade, spacing). Max 3 phrases.",
+  "strategie_vs_$opponent": "Conseils hors lane: teamfights, rotations, regroupement, macro. Max 3 phrases.",
+  "power_spikes_$opponent": "Niveaux/objets/fenêtres où $opponent est fort et comment les jouer. Max 3 phrases."
+}
+"""
           },
           {
             'role': 'user',
             'content': 'Je joue $champion contre $opponent sur la lane $lane.'
           },
         ],
-        'temperature': 0.7,
+        'temperature': 0.3,
         'max_tokens': 800,
       }),
     );
@@ -36,6 +62,7 @@ class OpenAIClient {
     if (response.statusCode != 200) {
       throw Exception('OpenAI error: ${response.statusCode} - ${response.body}');
     }
+
     final data = jsonDecode(response.body);
     return data['choices'][0]['message']['content'] as String;
   }

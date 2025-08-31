@@ -395,8 +395,14 @@ class _HomeScreenState extends State<HomeScreen> {
             return ap.compareTo(bp);
           });
           return kit.map<Widget>((spell) {
-            String spellImagePath = _getSpellImagePath(opponent, spell['nom'], spell['touche']);
-            
+            String spellImagePath = _getSpellImagePath(opponent, (spell['nom'] ?? '').toString(), (spell['touche'] ?? '').toString());
+            final String desc = (spell['description'] ?? spell['effet_court'] ?? '').toString();
+            final String championLeft = jsonData['matchup'].split(' vs ')[0];
+            final String dangerKey = 'si_danger_pour_$championLeft';
+            final String? danger = (spell[dangerKey] as String?)?.trim().isNotEmpty == true
+                ? (spell[dangerKey] as String)
+                : (spell['consigne'] as String?);
+
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
               child: Row(
@@ -459,7 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         }),
                         const SizedBox(height: 4),
                         Text(
-                          spell['description'],
+                          desc,
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey[300],
@@ -467,14 +473,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          '⚠️ ${spell['si_danger_pour_${jsonData['matchup'].split(' vs ')[0]}']}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.orange,
-                            height: 1.3,
+                        if (danger != null && danger.isNotEmpty)
+                          Text(
+                            '⚠️ $danger',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.orange,
+                              height: 1.3,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -496,15 +503,53 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const Divider(color: Colors.grey),
-        
-        if (jsonData['style_de_jeu_conseillé'] != null) ...[
-          const SizedBox(height: 8),
-          _buildGamePhase('🌅 EARLY GAME', jsonData['style_de_jeu_conseillé']['early']),
-          const SizedBox(height: 12),
-          _buildGamePhase('⚡ MID GAME', jsonData['style_de_jeu_conseillé']['mid_game']),
-          const SizedBox(height: 12),
-          _buildGamePhase('🏆 LATE GAME', jsonData['style_de_jeu_conseillé']['late_game']),
-        ],
+        // New schema support: detect advice keys by prefix regardless of opponent suffix
+        ...(() {
+          String findFirstByPrefix(String prefix) {
+            try {
+              for (final entry in jsonData.entries) {
+                final key = entry.key.toString();
+                if (key.toLowerCase().startsWith(prefix.toLowerCase())) {
+                  final val = entry.value?.toString() ?? '';
+                  if (val.trim().isNotEmpty) return val.trim();
+                }
+              }
+            } catch (_) {}
+            return '';
+          }
+
+          final legacyStyle = (jsonData['style_de_jeu_conseillé'] ?? jsonData['style_de_jeu_conseille']) as Map<String, dynamic>?;
+          final String legacyEarly = legacyStyle != null ? (legacyStyle['early'] ?? '').toString() : '';
+          final String legacyMid = legacyStyle != null ? (legacyStyle['mid_game'] ?? '').toString() : '';
+          final String legacyLate = legacyStyle != null ? (legacyStyle['late_game'] ?? '').toString() : '';
+
+          final String laning = findFirstByPrefix('laning_vs_');
+          final String strat = findFirstByPrefix('strategie_vs_');
+          final String spikes = findFirstByPrefix('power_spikes_');
+
+          final List<Widget> blocks = [];
+          if (laning.isNotEmpty) {
+            blocks..add(const SizedBox(height: 8))..add(_buildGamePhase('🌅 LANING', laning));
+          }
+          if (strat.isNotEmpty) {
+            blocks..add(const SizedBox(height: 12))..add(_buildGamePhase('🧭 STRATÉGIE', strat));
+          }
+          if (spikes.isNotEmpty) {
+            blocks..add(const SizedBox(height: 12))..add(_buildGamePhase('⚔️ POWER SPIKES', spikes));
+          }
+
+          // Fallback on legacy fields if new ones are empty
+          if (blocks.isEmpty && (legacyEarly.isNotEmpty || legacyMid.isNotEmpty || legacyLate.isNotEmpty)) {
+            blocks.add(const SizedBox(height: 8));
+            blocks.add(_buildGamePhase('🌅 EARLY GAME', legacyEarly));
+            blocks.add(const SizedBox(height: 12));
+            blocks.add(_buildGamePhase('⚡ MID GAME', legacyMid));
+            blocks.add(const SizedBox(height: 12));
+            blocks.add(_buildGamePhase('🏆 LATE GAME', legacyLate));
+          }
+
+          return blocks;
+        })(),
       ],
     );
   }
