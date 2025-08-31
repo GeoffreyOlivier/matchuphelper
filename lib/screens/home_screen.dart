@@ -523,19 +523,22 @@ class _HomeScreenState extends State<HomeScreen> {
           final String legacyMid = legacyStyle != null ? (legacyStyle['mid_game'] ?? '').toString() : '';
           final String legacyLate = legacyStyle != null ? (legacyStyle['late_game'] ?? '').toString() : '';
 
+          final String laneLabel = ((jsonData['lane'] ?? _selectedLane) ?? '').toString();
+          String titled(String base) => laneLabel.isNotEmpty ? '$base • $laneLabel' : base;
+
           final String laning = findFirstByPrefix('laning_vs_');
           final String strat = findFirstByPrefix('strategie_vs_');
           final String spikes = findFirstByPrefix('power_spikes_');
 
           final List<Widget> blocks = [];
           if (laning.isNotEmpty) {
-            blocks..add(const SizedBox(height: 8))..add(_buildGamePhase('🌅 LANING', laning));
+            blocks..add(const SizedBox(height: 8))..add(_buildGamePhase(titled('🌅 LANING'), laning));
           }
           if (strat.isNotEmpty) {
-            blocks..add(const SizedBox(height: 12))..add(_buildGamePhase('🧭 STRATÉGIE', strat));
+            blocks..add(const SizedBox(height: 12))..add(_buildGamePhase(titled('🧭 STRATÉGIE'), strat));
           }
           if (spikes.isNotEmpty) {
-            blocks..add(const SizedBox(height: 12))..add(_buildGamePhase('⚔️ POWER SPIKES', spikes));
+            blocks..add(const SizedBox(height: 12))..add(_buildGamePhase(titled('⚔️ POWER SPIKES'), spikes));
           }
 
           // Fallback on legacy fields if new ones are empty

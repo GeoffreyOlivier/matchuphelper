@@ -15,24 +15,35 @@ class MatchupRepository {
   final FirebaseStorageClient remote;
   final LocalStorage local;
 
-  String _fileName(String c1, String c2) {
+  String _fileName(String c1, String c2, String lane) {
     String clean(String s) => s.toLowerCase()
         .replaceAll(' ', '')
         .replaceAll('&', 'and')
         .replaceAll('.', '')
         .replaceAll("'", '');
-    return '${clean(c1)}_${clean(c2)}.json';
+    return '${clean(c1)}_${clean(c2)}_${clean(lane)}.json';
   }
 
   Future<(String raw, Map<String, dynamic>? parsed)> getAdvice(
       {required String champion, required String opponent, required String lane, required String apiKey}) async {
-    final file = _fileName(champion, opponent);
+    final laneFile = _fileName(champion, opponent, lane);
+    final legacyFile = () {
+      // Old naming without lane
+      String clean(String s) => s.toLowerCase()
+          .replaceAll(' ', '')
+          .replaceAll('&', 'and')
+          .replaceAll('.', '')
+          .replaceAll("'", '');
+      return '${clean(champion)}_${clean(opponent)}.json';
+    }();
 
     // 1) Remote cache (Firebase)
-    String? cached = await remote.readText('chatgpt_responses/$file');
+    String? cached = await remote.readText('chatgpt_responses/$laneFile');
+    cached ??= await remote.readText('chatgpt_responses/$legacyFile');
 
     // 2) Local cache (Documents)
-    cached ??= await local.readText(file);
+    cached ??= await local.readText(laneFile);
+    cached ??= await local.readText(legacyFile);
 
     if (cached != null) {
       return (cached, parseMatchupResponse(cached));
@@ -47,10 +58,10 @@ class MatchupRepository {
 
     // 4) Persist
     try {
-      await local.writeText(file, raw);
+      await local.writeText(laneFile, raw);
       if (kIsWeb == false) {
         // On mobile/desktop, Firebase may be configured
-        await remote.writeText('chatgpt_responses/$file', raw, contentType: 'application/json');
+        await remote.writeText('chatgpt_responses/$laneFile', raw, contentType: 'application/json');
       }
     } catch (_) {}
 

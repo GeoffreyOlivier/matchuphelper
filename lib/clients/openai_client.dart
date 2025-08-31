@@ -31,10 +31,12 @@ Règles générales :
 - Si un sort est peu dangereux/situationnel, n'inclus pas le champ "consigne".
 - Les consignes sont opérationnelles (verbes d'action), 1 phrase max.
 - Pas de texte hors JSON.
+ - Toutes les sections doivent être spécifiques à la lane "$lane" (top/jungle/mid/bot/support). Si le matchup change selon la lane, adapte les conseils.
 
 Structure de sortie attendue :
 {
   "matchup": "$champion vs $opponent sur la lane $lane",
+  "lane": "$lane",
   "kit_de_$opponent": [
     {
       "nom": "Nom du sort",
