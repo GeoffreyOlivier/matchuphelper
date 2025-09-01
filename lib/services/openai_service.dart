@@ -9,6 +9,7 @@ import '../utils/response_parser.dart' as rp;
 import '../utils/response_formatter.dart' as rf;
 import '../data/spell_mapping_loader.dart';
 import '../utils/path_resolver.dart';
+import '../services/rating_service.dart';
 
 class OpenAIService extends ChangeNotifier {
   bool _isLoading = false;
@@ -18,6 +19,7 @@ class OpenAIService extends ChangeNotifier {
   Map<String, dynamic>? _spellMapping;
   PathResolver? _pathResolver;
   MatchupRepository? _repo;
+  RatingService? _ratingService;
 
   bool get isLoading => _isLoading;
   String? get lastResponse => _lastResponse;
@@ -26,11 +28,13 @@ class OpenAIService extends ChangeNotifier {
 
   OpenAIService() {
     // Initialize dependencies
+    final firebaseClient = const FirebaseStorageClient();
     _repo = MatchupRepository(
       client: OpenAIClient(dotenv.env['OPENAI_API_KEY'] ?? ''),
-      remote: const FirebaseStorageClient(),
+      remote: firebaseClient,
       local: const LocalStorage(),
     );
+    _ratingService = RatingService(storage: firebaseClient);
     _loadSpellMapping();
   }
 
@@ -90,6 +94,8 @@ class OpenAIService extends ChangeNotifier {
     final resolver = _pathResolver ?? PathResolver(_spellMapping);
     return resolver.spellImagePath(championName, spellName, touche);
   }
+
+  RatingService get ratingService => _ratingService!;
 
   void clearError() {
     _error = null;

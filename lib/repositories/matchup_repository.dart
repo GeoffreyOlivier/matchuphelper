@@ -79,6 +79,12 @@ class MatchupRepository {
   // Enforces max 5 prompts per rolling hour per device (anonymous) on iOS/Android only.
   // No-op on Web or other platforms. Uses a small JSON file in chatgpt_responses/ via LocalStorage.
   Future<void> _enforceMobileHourlyRateLimit() async {
+    // Skip rate limiting in debug mode
+    if (kDebugMode) {
+      debugPrint('[RateLimit] Skipped in debug mode');
+      return;
+    }
+
     // Skip on web
     if (kIsWeb) return;
 

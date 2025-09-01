@@ -20,4 +20,14 @@ class FirebaseStorageClient {
     final metadata = SettableMetadata(contentType: contentType);
     await ref.putString(content, format: PutStringFormat.raw, metadata: metadata);
   }
+
+  Future<void> deleteFile(String remotePath) async {
+    try {
+      final ref = FirebaseStorage.instance.ref(remotePath);
+      await ref.delete();
+    } catch (e) {
+      // File might not exist, ignore error
+      throw Exception('Failed to delete file: $e');
+    }
+  }
 }

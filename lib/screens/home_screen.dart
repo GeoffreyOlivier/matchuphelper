@@ -4,6 +4,7 @@ import '../services/openai_service.dart';
 import '../constants/champions.dart';
 import '../utils/assets.dart';
 import '../widgets/champion_selection_row.dart';
+import '../widgets/rating_buttons.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -553,6 +554,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
           return blocks;
         })(),
+        
+        // Rating buttons at bottom right
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerRight,
+          child: RatingButtons(
+            champion: _selectedChampion ?? '',
+            opponent: _selectedOpponent ?? '',
+            lane: _selectedLane ?? '',
+            ratingService: openAIService.ratingService,
+          ),
+        ),
       ],
     );
   }
