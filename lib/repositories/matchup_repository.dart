@@ -46,9 +46,9 @@ class MatchupRepository {
     String? cached = await remote.readText('chatgpt_responses/$laneFile');
     cached ??= await remote.readText('chatgpt_responses/$legacyFile');
 
-    // 2) Local cache (Documents)
-    cached ??= await local.readText(laneFile);
-    cached ??= await local.readText(legacyFile);
+    // 2) Local cache (Documents) - DISABLED, only Firebase now
+    // cached ??= await local.readText(laneFile);
+    // cached ??= await local.readText(legacyFile);
 
     if (cached != null) {
       debugPrint('[MatchupRepository] Cache hit for $laneFile / $legacyFile');
@@ -65,9 +65,8 @@ class MatchupRepository {
       lane: lane,
     );
 
-    // 4) Persist
+    // 4) Persist to Firebase only
     try {
-      await local.writeText(laneFile, raw);
       if (kIsWeb == false) {
         // On mobile/desktop, Firebase may be configured
         await remote.writeText('chatgpt_responses/$laneFile', raw, contentType: 'application/json');

@@ -30,4 +30,34 @@ class LocalStorage {
     final file = File(p.join(dir, fileName));
     await file.writeAsString(content);
   }
+
+  Future<void> clearCache() async {
+    try {
+      final dir = await _responsesDir();
+      final directory = Directory(dir);
+      if (await directory.exists()) {
+        await directory.delete(recursive: true);
+        // Recreate the directory
+        await directory.create(recursive: true);
+      }
+    } catch (_) {
+      // Ignore errors during cache clearing
+    }
+  }
+
+  Future<List<String>> listCachedFiles() async {
+    try {
+      final dir = await _responsesDir();
+      final directory = Directory(dir);
+      if (!await directory.exists()) return [];
+      
+      final files = await directory.list().toList();
+      return files
+          .whereType<File>()
+          .map((file) => p.basename(file.path))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
 }
