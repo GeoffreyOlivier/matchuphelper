@@ -73,7 +73,12 @@ class OpenAIService extends ChangeNotifier {
       _lastResponse = rf.formatMatchupResponse(raw);
       return _lastResponse;
     } catch (e) {
-      _error = 'Failed to get matchup advice: $e';
+      final msg = e.toString();
+      if (msg.contains('Rate limit reached')) {
+        _error = 'Limite atteinte : vous avez atteint 5 requêtes par heure sur mobile. Réessayez un peu plus tard.';
+      } else {
+        _error = 'Une erreur est survenue lors de la génération du conseil : $e';
+      }
       return null;
     } finally {
       _isLoading = false;
