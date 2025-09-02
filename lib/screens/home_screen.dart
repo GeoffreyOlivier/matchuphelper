@@ -387,15 +387,22 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           }
                         },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero,
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.resolveWith((_) => const Color(0xFF111111)),
+                    foregroundColor: MaterialStateProperty.resolveWith((states) =>
+                        states.contains(MaterialState.disabled) ? Colors.grey[500] : Colors.white),
+                    elevation: const MaterialStatePropertyAll(0),
+                    padding: const MaterialStatePropertyAll(EdgeInsets.symmetric(vertical: 16)),
+                    shape: const MaterialStatePropertyAll(
+                      RoundedRectangleBorder(borderRadius: BorderRadius.zero),
                     ),
+                    side: MaterialStateProperty.resolveWith((_) =>
+                        BorderSide(color: Colors.grey[600]!, width: 1)),
+                    overlayColor: const MaterialStatePropertyAll(Color(0x1AFFFFFF)), // subtle press highlight
                   ),
                   child: const Text(
                     'Avoir les conseils',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFc2902a)),
                   ),
                 ),
               ],
@@ -412,21 +419,18 @@ class _HomeScreenState extends State<HomeScreen> {
               
               // Response Display
               if (openAIService.lastResponse != null) ...[
-                const SizedBox(height: 24),
-                const Text(
-                  'Matchup Advice:',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Card(
-                  elevation: 2,
-                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: _buildMatchupAdviceWidget(openAIService),
+                const SizedBox(height: 32),
+                Align(
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: gridMaxWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        _buildMatchupAdviceWidget(openAIService),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -452,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         // Titre du matchup
         Text(
-          '🎯 ${jsonData['matchup']}',
+          '${jsonData['matchup']}',
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
