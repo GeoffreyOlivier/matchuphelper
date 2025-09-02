@@ -370,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
         
         // Kit de l'adversaire
         const Text(
-          '⚔️ KIT DE L\'ADVERSAIRE',
+          '⚔️ KIT DU CHAMPION ',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,

@@ -2,11 +2,13 @@ class Rating {
   final int upvotes;
   final int downvotes;
   final DateTime lastUpdated;
+  final List<Map<String, dynamic>> feedback;
 
   const Rating({
     required this.upvotes,
     required this.downvotes,
     required this.lastUpdated,
+    this.feedback = const [],
   });
 
   factory Rating.empty() {
@@ -14,6 +16,7 @@ class Rating {
       upvotes: 0,
       downvotes: 0,
       lastUpdated: DateTime.now(),
+      feedback: [],
     );
   }
 
@@ -22,6 +25,7 @@ class Rating {
       upvotes: json['upvotes'] ?? 0,
       downvotes: json['downvotes'] ?? 0,
       lastUpdated: DateTime.parse(json['lastUpdated'] ?? DateTime.now().toIso8601String()),
+      feedback: List<Map<String, dynamic>>.from(json['feedback'] ?? []),
     );
   }
 
@@ -30,6 +34,7 @@ class Rating {
       'upvotes': upvotes,
       'downvotes': downvotes,
       'lastUpdated': lastUpdated.toIso8601String(),
+      'feedback': feedback,
     };
   }
 
@@ -37,19 +42,18 @@ class Rating {
     int? upvotes,
     int? downvotes,
     DateTime? lastUpdated,
+    List<Map<String, dynamic>>? feedback,
   }) {
     return Rating(
       upvotes: upvotes ?? this.upvotes,
       downvotes: downvotes ?? this.downvotes,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      feedback: feedback ?? this.feedback,
     );
   }
 
-  // Logic: 3 downvotes and not double positive = should delete
   bool shouldDelete() {
-    return downvotes >= 3 && upvotes < (downvotes * 2);
+    // Delete if downvotes significantly outweigh upvotes
+    return downvotes >= 3 && downvotes > upvotes * 2;
   }
-
-  int get totalVotes => upvotes + downvotes;
-  double get positiveRatio => totalVotes == 0 ? 0.0 : upvotes / totalVotes;
 }

@@ -30,9 +30,10 @@ class ChampionSelectionRow extends StatelessWidget {
           maxWidth != null ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
       children: [
         // Your Champion Input (Left)
-        SizedBox(
-          width: cardSize,
-          child: Column(
+        Flexible(
+          child: SizedBox(
+            width: cardSize,
+            child: Column(
             children: [
               GestureDetector(
                 onTap: onTapChampionSide,
@@ -99,42 +100,47 @@ class ChampionSelectionRow extends StatelessWidget {
                 ),
               ),
             ],
+            ),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 8),
         // VS Image
-        SizedBox(
-          height: cardSize,
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.zero,
-              ),
-              child: Image.asset(
-                'assets/images/vs.png',
-                width: 70,
-                height: 70,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Text(
-                    'VS',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  );
-                },
+        Flexible(
+          flex: 0,
+          child: SizedBox(
+            height: cardSize * 0.6,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.zero,
+                ),
+                child: Image.asset(
+                  'assets/images/vs.png',
+                  width: 50,
+                  height: 50,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Text(
+                      'VS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 8),
         // Enemy Champion Input (Right)
-        SizedBox(
-          width: cardSize,
-          child: Column(
+        Flexible(
+          child: SizedBox(
+            width: cardSize,
+            child: Column(
             children: [
               GestureDetector(
                 onTap: onTapOpponentSide,
@@ -201,6 +207,7 @@ class ChampionSelectionRow extends StatelessWidget {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ],

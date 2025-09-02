@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'screens/home_screen.dart';
 import 'services/openai_service.dart';
 
@@ -16,6 +17,15 @@ void main() async {
   // Initialize Firebase (uses platform config files: GoogleService-Info.plist / google-services.json)
   try {
     await Firebase.initializeApp();
+    // Enable App Check with debug providers to suppress warnings in dev/testing
+    try {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.debug,
+        appleProvider: AppleProvider.debug,
+      );
+    } catch (_) {
+      // App Check activation failed; continue without it
+    }
     // Ensure we have an authenticated session (anonymous) for Firebase Storage rules
     await FirebaseAuth.instance.signInAnonymously();
   } catch (e) {

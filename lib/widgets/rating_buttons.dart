@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/rating.dart';
 import '../services/rating_service.dart';
+import 'feedback_modal.dart';
 
 class RatingButtons extends StatefulWidget {
   final String champion;
@@ -9,12 +10,12 @@ class RatingButtons extends StatefulWidget {
   final RatingService ratingService;
 
   const RatingButtons({
-    Key? key,
+    super.key,
     required this.champion,
     required this.opponent,
     required this.lane,
     required this.ratingService,
-  }) : super(key: key);
+  });
 
   @override
   State<RatingButtons> createState() => _RatingButtonsState();
@@ -88,12 +89,17 @@ class _RatingButtonsState extends State<RatingButtons> {
   Future<void> _downvote() async {
     if (_hasVoted) return;
     
+    // Show feedback modal before processing downvote
+    final feedback = await _showFeedbackModal();
+    if (feedback == null) return; // User cancelled
+    
     setState(() => _isLoading = true);
     try {
       await widget.ratingService.downvote(
         widget.champion,
         widget.opponent,
         widget.lane,
+        feedback: feedback,
       );
       setState(() => _hasVoted = true);
     } catch (e) {
@@ -102,6 +108,15 @@ class _RatingButtonsState extends State<RatingButtons> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<Map<String, bool>?> _showFeedbackModal() async {
+    return showDialog<Map<String, bool>>(
+      context: context,
+      builder: (BuildContext context) {
+        return const FeedbackModal();
+      },
+    );
   }
 
   @override

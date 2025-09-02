@@ -48,11 +48,11 @@ class RatingService extends ChangeNotifier {
     await _vote(champion, opponent, lane, isUpvote: true);
   }
 
-  Future<void> downvote(String champion, String opponent, String lane) async {
-    await _vote(champion, opponent, lane, isUpvote: false);
+  Future<void> downvote(String champion, String opponent, String lane, {Map<String, bool>? feedback}) async {
+    await _vote(champion, opponent, lane, isUpvote: false, feedback: feedback);
   }
 
-  Future<void> _vote(String champion, String opponent, String lane, {required bool isUpvote}) async {
+  Future<void> _vote(String champion, String opponent, String lane, {required bool isUpvote, Map<String, bool>? feedback}) async {
     try {
       final rating = await getRating(champion, opponent, lane);
       
@@ -64,6 +64,12 @@ class RatingService extends ChangeNotifier {
           : rating.copyWith(
               downvotes: rating.downvotes + 1,
               lastUpdated: DateTime.now(),
+              feedback: feedback != null 
+                  ? [...rating.feedback, {
+                      'timestamp': DateTime.now().toIso8601String(),
+                      'issues': feedback,
+                    }]
+                  : rating.feedback,
             );
 
       // Save updated rating
