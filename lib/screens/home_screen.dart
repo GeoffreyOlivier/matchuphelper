@@ -377,14 +377,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 ElevatedButton(
                   onPressed: _selectedChampion == null || 
                             _selectedOpponent == null || 
-                            _selectedLane == null
+                            _selectedLane == null ||
+                            openAIService.isLoading
                       ? null
                       : () async {
-                          if (_formKey.currentState!.validate()) {
-                            await openAIService.getMatchupAdvice(
-                              _selectedChampion!,
-                              _selectedOpponent!,
-                              _selectedLane!,
+                          // Clear any previous error and log action
+                          openAIService.clearError();
+                          debugPrint('[Home] Get advice pressed: champion=' 
+                              '$_selectedChampion, opponent=$_selectedOpponent, lane=$_selectedLane');
+                          await openAIService.getMatchupAdvice(
+                            _selectedChampion!,
+                            _selectedOpponent!,
+                            _selectedLane!,
+                          );
+                          if (!mounted) return;
+                          if (openAIService.error != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(openAIService.error!)),
                             );
                           }
                         },
@@ -496,12 +505,40 @@ class _HomeScreenState extends State<HomeScreen> {
         
         // Extraire le nom de l'adversaire
         ...(() {
-          String opponent = jsonData['matchup'].split(' vs ')[1].split(' ')[0];
+          final String matchup = (jsonData['matchup'] ?? '').toString();
+          String opponent = '';
+          final lower = matchup.toLowerCase();
+          final vsIdx = lower.indexOf(' vs ');
+          final laneIdx = lower.indexOf(' sur la lane');
+          if (vsIdx != -1 && laneIdx != -1 && laneIdx > vsIdx + 4) {
+            opponent = matchup.substring(vsIdx + 4, laneIdx).trim();
+          } else {
+            // Fallback extraction
+            final parts = matchup.split(' vs ');
+            if (parts.length > 1) {
+              opponent = parts[1].split(' sur').first.trim();
+            }
+          }
+
+          // Trouver la clé du kit — d'abord l'exacte, sinon la première qui commence par 'kit_de_'
           String kitKey = 'kit_de_$opponent';
-          
-          if (jsonData[kitKey] == null) return [const SizedBox()];
-          
-          final List<dynamic> kit = List<dynamic>.from(jsonData[kitKey]);
+          dynamic kitVal = jsonData[kitKey];
+          if (kitVal == null) {
+            try {
+              final entry = jsonData.entries.firstWhere(
+                (e) => e.key.toString().toLowerCase().startsWith('kit_de_'),
+                orElse: () => const MapEntry('', null),
+              );
+              if (entry.value != null) {
+                kitKey = entry.key.toString();
+                kitVal = entry.value;
+              }
+            } catch (_) {}
+          }
+
+          if (kitVal == null) return [const SizedBox()];
+
+          final List<dynamic> kit = List<dynamic>.from(kitVal);
           // Place passive first
           kit.sort((a, b) {
             final at = (a['touche'] ?? '').toString().toLowerCase();

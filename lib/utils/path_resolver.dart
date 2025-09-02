@@ -4,8 +4,14 @@ class PathResolver {
 
   String spellImagePath(String championName, String spellName, [String? touche]) {
     // Mapping based
-    if (spellMapping != null && spellMapping![championName.toLowerCase()] != null) {
-      final championSpells = spellMapping![championName.toLowerCase()] as Map<String, dynamic>;
+    final normalizedChampionKey = championName
+        .toLowerCase()
+        .replaceAll(' ', '')
+        .replaceAll("'", '')
+        .replaceAll('.', '')
+        .replaceAll('&', '');
+    if (spellMapping != null && spellMapping![normalizedChampionKey] != null) {
+      final championSpells = spellMapping![normalizedChampionKey] as Map<String, dynamic>;
 
       String? mappingKeyFromTouche;
       if (touche != null) {
@@ -60,12 +66,7 @@ class PathResolver {
     }
 
     // Fallback generic
-    final dirChampion = _championDirOverride(championName) ?? championName
-        .toLowerCase()
-        .replaceAll(' ', '')
-        .replaceAll("'", '')
-        .replaceAll('.', '')
-        .replaceAll('&', '');
+    final dirChampion = _championDirOverride(championName) ?? normalizedChampionKey;
 
     String suffix = 'Q';
     bool isPassive = false;
@@ -78,8 +79,12 @@ class PathResolver {
       }
     }
 
-    String championForFile = championName.substring(0, 1).toUpperCase() +
-        championName.substring(1).toLowerCase().replaceAll(' ', '');
+    // Build CamelCase champion part used in many spell filenames, e.g., "XinZhao"
+    String championForFile = championName
+        .split(RegExp(r"[ '\.&]+"))
+        .where((p) => p.isNotEmpty)
+        .map((p) => p.substring(0, 1).toUpperCase() + (p.length > 1 ? p.substring(1) : ''))
+        .join();
 
     return isPassive
         ? 'assets/lol_champion_images/$dirChampion/passive.png'

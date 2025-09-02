@@ -12,20 +12,8 @@ class OpenAIClient {
     required String lane,
   }) async {
     final sw = Stopwatch()..start();
-    final response = await http.post(
-      Uri.parse('https://api.openai.com/v1/chat/completions'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
-      },
-      body: jsonEncode({
-        'model': 'gpt-4.1',
-        // Optionnel mais utile pour forcer du JSON valide
-        'response_format': {'type': 'json_object'},
-        'messages': [
-          {
-            'role': 'system',
-            'content': """
+    // Build messages
+    final systemMsg = """
 Tu es coach sur League of Legends (patch 25.X). Réponds uniquement en JSON strict, concis, sans traduire les termes anglais, ≤ 800 tokens.
 
 Règles générales :
@@ -51,11 +39,29 @@ Structure de sortie attendue :
   "strategie_vs_$opponent": "Conseils hors lane: teamfights, rotations, regroupement, macro. Max 3 phrases.",
   "power_spikes_$opponent": "Niveaux/objets/fenêtres où $opponent est fort et comment les jouer. Max 3 phrases."
 }
-"""
+""";
+    final userMsg = 'Je joue $champion contre $opponent sur la lane $lane.';
+
+    debugPrint('[OpenAI][Prompt] champion="$champion" opponent="$opponent" lane="$lane"');
+    debugPrint('[OpenAI][System] ${systemMsg.substring(0, systemMsg.length.clamp(0, 300))}...');
+    debugPrint('[OpenAI][User] $userMsg');
+    final response = await http.post(
+      Uri.parse('https://api.openai.com/v1/chat/completions'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4.1',
+        'response_format': {'type': 'json_object'},
+        'messages': [
+          {
+            'role': 'system',
+            'content': systemMsg,
           },
           {
             'role': 'user',
-            'content': 'Je joue $champion contre $opponent sur la lane $lane.'
+            'content': userMsg,
           },
         ],
         'temperature': 0.3,
@@ -70,6 +76,9 @@ Structure de sortie attendue :
     }
 
     final data = jsonDecode(response.body);
-    return data['choices'][0]['message']['content'] as String;
+    final content = data['choices'][0]['message']['content'] as String;
+    final preview = content.length > 400 ? content.substring(0, 400) + '…' : content;
+    debugPrint('[OpenAI][Raw] ${preview.replaceAll('\n', ' ')}');
+    return content;
   }
 }
