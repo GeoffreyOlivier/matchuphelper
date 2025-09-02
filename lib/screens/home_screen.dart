@@ -8,6 +8,7 @@ import '../widgets/rating_buttons.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:convert';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -434,6 +435,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ],
+
+              // Footer Ko-fi link
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.center,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: gridMaxWidth),
+                  child: GestureDetector(
+                    onTap: _openKoFi,
+                    child: Image.asset(
+                      'assets/images/support_me_on_kofi_dark.png',
+                      height: 45,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -695,6 +713,15 @@ class _HomeScreenState extends State<HomeScreen> {
   String _getSpellImagePath(String championName, String spellName, String touche) {
     final openAIService = Provider.of<OpenAIService>(context, listen: false);
     return openAIService.getSpellImagePath(championName, spellName, touche);
+  }
+
+  // Open Ko-fi link
+  Future<void> _openKoFi() async {
+    final uri = Uri.parse('https://ko-fi.com/matchuplol');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      // Fallback: try in-app webview
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
+    }
   }
 
   Widget _buildLaneIcon(String lane, String iconPath) {
