@@ -41,10 +41,6 @@ Structure de sortie attendue :
 }
 """;
     final userMsg = 'Je joue $champion contre $opponent sur la lane $lane.';
-
-    logd('[OpenAI][Prompt] champion="$champion" opponent="$opponent" lane="$lane"');
-    logd('[OpenAI] system: $systemMsg');
-    logd('[OpenAI] user: $userMsg');
     final response = await http.post(
       Uri.parse('https://api.openai.com/v1/chat/completions'),
       headers: {
@@ -69,15 +65,12 @@ Structure de sortie attendue :
       }),
     );
     sw.stop();
-    logd('[OpenAI] ${response.statusCode} in ${sw.elapsedMilliseconds} ms');
-
     if (response.statusCode != 200) {
       throw Exception('OpenAI error: ${response.statusCode} - ${response.body}');
     }
 
     final data = jsonDecode(response.body);
     final content = data['choices'][0]['message']['content'] as String;
-    logd('[OpenAI] Raw: ${content.length > 400 ? content.substring(0, 400) + '...' : content}');
     return content;
   }
 }
