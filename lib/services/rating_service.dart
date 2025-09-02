@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../clients/firebase_storage_client.dart';
 import '../models/rating.dart';
+import '../utils/log.dart';
 
 class RatingService extends ChangeNotifier {
   final FirebaseStorageClient _storage;
@@ -32,11 +33,11 @@ class RatingService extends ChangeNotifier {
       final swRead = Stopwatch()..start();
       final content = await _storage.readText('ratings/$fileName');
       swRead.stop();
-      debugPrint('[Perf][Rating] Read ratings/$fileName in ${swRead.elapsedMilliseconds} ms');
+      logd('[Perf][Rating] Read ratings/$fileName in ${swRead.elapsedMilliseconds} ms');
 
       if (content == null || content.isEmpty) {
         totalSw.stop();
-        debugPrint('[Perf][Rating] TOTAL ${totalSw.elapsedMilliseconds} ms (empty)');
+        logd('[Perf][Rating] TOTAL ${totalSw.elapsedMilliseconds} ms (empty)');
         return Rating.empty();
       }
 
@@ -46,11 +47,11 @@ class RatingService extends ChangeNotifier {
       final jsonMap = jsonDecode(lastLine);
       swDecode.stop();
       totalSw.stop();
-      debugPrint('[Perf][Rating] Decode ${swDecode.elapsedMilliseconds} ms, TOTAL ${totalSw.elapsedMilliseconds} ms');
+      logd('[Perf][Rating] Decode ${swDecode.elapsedMilliseconds} ms, TOTAL ${totalSw.elapsedMilliseconds} ms');
 
       return Rating.fromJson(jsonMap);
     } catch (e) {
-      debugPrint('[RatingService] Error getting rating: $e');
+      logd('[RatingService] Error getting rating: $e');
       return Rating.empty();
     }
   }
@@ -111,7 +112,7 @@ class RatingService extends ChangeNotifier {
         'lane': lane,
         'upvotes': updated.upvotes,
         'downvotes': updated.downvotes,
-        'lastUpdated': updated.lastUpdated?.toIso8601String(),
+        'lastUpdated': updated.lastUpdated.toIso8601String(),
         'issues_counts': issuesCounts,
         'feedback': updated.feedback,
       };
@@ -122,7 +123,7 @@ class RatingService extends ChangeNotifier {
       final swRead = Stopwatch()..start();
       final existing = await _storage.readText('ratings/$fileName') ?? '';
       swRead.stop();
-      debugPrint('[Perf][Rating] Read before write ratings/$fileName in ${swRead.elapsedMilliseconds} ms');
+      logd('[Perf][Rating] Read before write ratings/$fileName in ${swRead.elapsedMilliseconds} ms');
       final newContent = (existing.isNotEmpty ? existing + '\n' : '') +
           jsonEncode(record);
 
@@ -133,14 +134,14 @@ class RatingService extends ChangeNotifier {
         contentType: 'application/json',
       );
       swWrite.stop();
-      debugPrint('[Perf][Rating] Write ratings/$fileName in ${swWrite.elapsedMilliseconds} ms');
+      logd('[Perf][Rating] Write ratings/$fileName in ${swWrite.elapsedMilliseconds} ms');
 
       if (updated.shouldDelete()) {
         final swDelete = Stopwatch()..start();
         await _deleteMatchup(champion, opponent, lane);
         swDelete.stop();
-        debugPrint('[Perf][Rating] Delete matchup in ${swDelete.elapsedMilliseconds} ms');
-        debugPrint(
+        logd('[Perf][Rating] Delete matchup in ${swDelete.elapsedMilliseconds} ms');
+        logd(
           '[RatingService] Deleted matchup due to poor rating: '
           '${updated.downvotes} downvotes, ${updated.upvotes} upvotes',
         );
@@ -148,9 +149,9 @@ class RatingService extends ChangeNotifier {
 
       notifyListeners();
       totalSw.stop();
-      debugPrint('[Perf][Rating] TOTAL vote ${totalSw.elapsedMilliseconds} ms');
+      logd('[Perf][Rating] TOTAL vote ${totalSw.elapsedMilliseconds} ms');
     } catch (e) {
-      debugPrint('[RatingService] Error voting: $e');
+      logd('[RatingService] Error voting: $e');
     }
   }
 
@@ -182,10 +183,10 @@ class RatingService extends ChangeNotifier {
       final sw = Stopwatch()..start();
       await _storage.deleteFile('chatgpt_responses/$matchupFileName');
       sw.stop();
-      debugPrint('[Perf][Rating] Firebase delete chatgpt_responses/$matchupFileName in ${sw.elapsedMilliseconds} ms');
-      debugPrint('[RatingService] Deleted matchup: chatgpt_responses/$matchupFileName');
+      logd('[Perf][Rating] Firebase delete chatgpt_responses/$matchupFileName in ${sw.elapsedMilliseconds} ms');
+      logd('[RatingService] Deleted matchup: chatgpt_responses/$matchupFileName');
     } catch (e) {
-      debugPrint('[RatingService] Error deleting matchup: $e');
+      logd('[RatingService] Error deleting matchup: $e');
     }
   }
 }

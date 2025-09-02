@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
+import '../utils/log.dart';
 
 class OpenAIClient {
   OpenAIClient(this.apiKey);
@@ -42,9 +42,9 @@ Structure de sortie attendue :
 """;
     final userMsg = 'Je joue $champion contre $opponent sur la lane $lane.';
 
-    debugPrint('[OpenAI][Prompt] champion="$champion" opponent="$opponent" lane="$lane"');
-    debugPrint('[OpenAI][System] ${systemMsg.substring(0, systemMsg.length.clamp(0, 300))}...');
-    debugPrint('[OpenAI][User] $userMsg');
+    logd('[OpenAI][Prompt] champion="$champion" opponent="$opponent" lane="$lane"');
+    logd('[OpenAI] system: $systemMsg');
+    logd('[OpenAI] user: $userMsg');
     final response = await http.post(
       Uri.parse('https://api.openai.com/v1/chat/completions'),
       headers: {
@@ -69,7 +69,7 @@ Structure de sortie attendue :
       }),
     );
     sw.stop();
-    debugPrint('[Perf][OpenAI] HTTP ${sw.elapsedMilliseconds} ms');
+    logd('[OpenAI] ${response.statusCode} in ${sw.elapsedMilliseconds} ms');
 
     if (response.statusCode != 200) {
       throw Exception('OpenAI error: ${response.statusCode} - ${response.body}');
@@ -77,8 +77,7 @@ Structure de sortie attendue :
 
     final data = jsonDecode(response.body);
     final content = data['choices'][0]['message']['content'] as String;
-    final preview = content.length > 400 ? content.substring(0, 400) + '…' : content;
-    debugPrint('[OpenAI][Raw] ${preview.replaceAll('\n', ' ')}');
+    logd('[OpenAI] Raw: ${content.length > 400 ? content.substring(0, 400) + '...' : content}');
     return content;
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/rating.dart';
 import '../services/rating_service.dart';
 import 'feedback_modal.dart';
+import '../utils/log.dart';
 
 class RatingButtons extends StatefulWidget {
   final String champion;
@@ -80,7 +81,7 @@ class _RatingButtonsState extends State<RatingButtons> {
       setState(() => _hasVoted = true);
     } catch (e) {
       // Handle Firebase permission errors gracefully
-      debugPrint('[RatingButtons] Error voting: $e');
+      logd('[RatingButtons] Upvote error: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -104,7 +105,7 @@ class _RatingButtonsState extends State<RatingButtons> {
       setState(() => _hasVoted = true);
     } catch (e) {
       // Handle Firebase permission errors gracefully
-      debugPrint('[RatingButtons] Error voting: $e');
+      logd('[RatingButtons] Error voting: $e');
     } finally {
       setState(() => _isLoading = false);
     }

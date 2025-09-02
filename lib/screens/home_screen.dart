@@ -9,6 +9,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'dart:convert';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/log.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -383,8 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       : () async {
                           // Clear any previous error and log action
                           openAIService.clearError();
-                          debugPrint('[Home] Get advice pressed: champion=' 
-                              '$_selectedChampion, opponent=$_selectedOpponent, lane=$_selectedLane');
+                          logd('[UI] Get advice pressed: champion=$_selectedChampion, opponent=$_selectedOpponent, lane=$_selectedLane');
                           await openAIService.getMatchupAdvice(
                             _selectedChampion!,
                             _selectedOpponent!,

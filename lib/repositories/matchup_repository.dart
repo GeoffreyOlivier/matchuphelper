@@ -5,6 +5,7 @@ import '../clients/openai_client.dart';
 import '../clients/firebase_storage_client.dart';
 import '../storage/local_storage.dart';
 import '../utils/response_parser.dart';
+import '../utils/log.dart';
 
 class MatchupRepository {
   MatchupRepository({
@@ -48,13 +49,13 @@ class MatchupRepository {
     final swCacheLane = Stopwatch()..start();
     String? cached = await remote.readText('chatgpt_responses/$laneFile');
     swCacheLane.stop();
-    debugPrint('[Perf][Repo] Remote cache lane read ${swCacheLane.elapsedMilliseconds} ms for $laneFile');
+    logd('[Perf][Repo] Remote cache lane read ${swCacheLane.elapsedMilliseconds} ms for $laneFile');
 
     if (cached == null) {
       final swCacheLegacy = Stopwatch()..start();
       cached = await remote.readText('chatgpt_responses/$legacyFile');
       swCacheLegacy.stop();
-      debugPrint('[Perf][Repo] Remote cache legacy read ${swCacheLegacy.elapsedMilliseconds} ms for $legacyFile');
+      logd('[Perf][Repo] Remote cache legacy read ${swCacheLegacy.elapsedMilliseconds} ms for $legacyFile');
     }
 
     // 2) Local cache (Documents) - DISABLED, only Firebase now
@@ -62,12 +63,12 @@ class MatchupRepository {
     // cached ??= await local.readText(legacyFile);
 
     if (cached != null) {
-      debugPrint('[MatchupRepository] Cache hit for $laneFile / $legacyFile');
+      logd('[MatchupRepository] Cache hit for $laneFile / $legacyFile');
       final swParse = Stopwatch()..start();
       final parsed = parseMatchupResponse(cached);
       swParse.stop();
       totalSw.stop();
-      debugPrint('[Perf][Repo] Parse ${swParse.elapsedMilliseconds} ms, TOTAL ${totalSw.elapsedMilliseconds} ms (cache path)');
+      logd('[Perf][Repo] Parse ${swParse.elapsedMilliseconds} ms, TOTAL ${totalSw.elapsedMilliseconds} ms (cache path)');
       return (cached, parsed);
     }
 
@@ -75,7 +76,7 @@ class MatchupRepository {
     final swRate = Stopwatch()..start();
     await _enforceMobileHourlyRateLimit();
     swRate.stop();
-    debugPrint('[Perf][Repo] Rate limit ${swRate.elapsedMilliseconds} ms');
+    logd('[Perf][Repo] Rate limit ${swRate.elapsedMilliseconds} ms');
 
     // 3) Network call
     final swOpenAI = Stopwatch()..start();
@@ -85,7 +86,7 @@ class MatchupRepository {
       lane: lane,
     );
     swOpenAI.stop();
-    debugPrint('[Perf][Repo] OpenAI call ${swOpenAI.elapsedMilliseconds} ms');
+    logd('[Perf][Repo] OpenAI call ${swOpenAI.elapsedMilliseconds} ms');
 
     // 4) Persist to Firebase only
     try {
@@ -98,10 +99,10 @@ class MatchupRepository {
             .writeText('chatgpt_responses/$laneFile', raw, contentType: 'application/json')
             .then((_) {
           swWrite.stop();
-          debugPrint('[Perf][Repo] Firebase write ${swWrite.elapsedMilliseconds} ms (bg)');
+          logd('[Perf][Repo] Firebase write ${swWrite.elapsedMilliseconds} ms (bg)');
         }).catchError((e) {
           swWrite.stop();
-          debugPrint('[Perf][Repo] Firebase write failed after ${swWrite.elapsedMilliseconds} ms: $e');
+          logd('[Perf][Repo] Firebase write failed after ${swWrite.elapsedMilliseconds} ms: $e');
         });
       }
     } catch (_) {}
@@ -110,7 +111,7 @@ class MatchupRepository {
     final parsedNet = parseMatchupResponse(raw);
     swParseNetwork.stop();
     totalSw.stop();
-    debugPrint('[Perf][Repo] Parse ${swParseNetwork.elapsedMilliseconds} ms, TOTAL ${totalSw.elapsedMilliseconds} ms (network path)');
+    logd('[Perf][Repo] Parse ${swParseNetwork.elapsedMilliseconds} ms, TOTAL ${totalSw.elapsedMilliseconds} ms (network path)');
     return (raw, parsedNet);
   }
 
@@ -119,7 +120,7 @@ class MatchupRepository {
   Future<void> _enforceMobileHourlyRateLimit() async {
     // Skip rate limiting in debug mode
     if (kDebugMode) {
-      debugPrint('[RateLimit] Skipped in debug mode');
+      logd('[RateLimit] Skipped in debug mode');
       return;
     }
 
@@ -129,7 +130,7 @@ class MatchupRepository {
     // Check platform without importing dart:io (safe for web builds)
     final isMobile = defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.android;
-    debugPrint('[RateLimit] Platform: ${defaultTargetPlatform.name}, isMobile=$isMobile');
+    logd('[RateLimit] Platform: ${defaultTargetPlatform.name}, isMobile=$isMobile');
     if (!isMobile) return;
 
     const fileName = '_rate_limit.json';
@@ -174,19 +175,19 @@ class MatchupRepository {
       // Use the higher of the two counts to be conservative
       count = count > _sessionCount ? count : _sessionCount;
       windowStart = _sessionWindowStartMs ?? windowStart;
-      debugPrint('[RateLimit][SessionFallback] using session counters: count=$_sessionCount, windowStart=$_sessionWindowStartMs');
+      logd('[RateLimit][SessionFallback] using session counters: count=$_sessionCount, windowStart=$_sessionWindowStartMs');
     }
 
-    debugPrint('[RateLimit] Before check: count=$count, windowStart=$windowStart, now=$now');
+    logd('[RateLimit] Before check: count=$count, windowStart=$windowStart, now=$now');
     // Enforce limit (do not swallow this exception)
     if (count >= maxPerHour) {
-      debugPrint('[RateLimit] BLOCKED: count=$count >= $maxPerHour');
+      logd('[RateLimit] BLOCKED: count=$count >= $maxPerHour');
       throw Exception('Rate limit reached: maximum $maxPerHour prompts per hour on mobile for anonymous users.');
     }
 
     // Increment and persist (best-effort)
     count += 1;
-    debugPrint('[RateLimit] After increment: count=$count');
+    logd('[RateLimit] After increment: count=$count');
     final updated = jsonEncode({
       'windowStart': windowStart,
       'count': count,
@@ -197,7 +198,7 @@ class MatchupRepository {
       // If write fails, update session fallback to enforce within this app session
       if (_sessionWindowStartMs == null) _sessionWindowStartMs = windowStart;
       _sessionCount = count;
-      debugPrint('[RateLimit][SessionFallback] write failed, sessionCount=$_sessionCount');
+      logd('[RateLimit][SessionFallback] write failed, sessionCount=$_sessionCount');
     }
   }
 }

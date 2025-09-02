@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'log.dart';
 
 Map<String, dynamic>? parseMatchupResponse(String rawResponse) {
   try {
@@ -12,9 +12,7 @@ Map<String, dynamic>? parseMatchupResponse(String rawResponse) {
     }
     return jsonDecode(cleaned) as Map<String, dynamic>;
   } catch (e) {
-    final preview = rawResponse.replaceAll('\n', ' ');
-    final short = preview.length > 240 ? preview.substring(0, 240) + '…' : preview;
-    debugPrint('[Parse][JSON] Failed to parse: $e | raw: $short');
+    logd('[Parser] JSON parse failed, preview: ${rawResponse.length > 300 ? rawResponse.substring(0, 300) + '...' : rawResponse}');
     return null;
   }
 }
