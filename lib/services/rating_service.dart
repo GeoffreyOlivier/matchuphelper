@@ -27,16 +27,26 @@ class RatingService extends ChangeNotifier {
 
   Future<Rating> getRating(String champion, String opponent, String lane) async {
     try {
+      final totalSw = Stopwatch()..start();
       final fileName = _ratingFileName(champion, opponent, lane);
+      final swRead = Stopwatch()..start();
       final content = await _storage.readText('ratings/$fileName');
+      swRead.stop();
+      debugPrint('[Perf][Rating] Read ratings/$fileName in ${swRead.elapsedMilliseconds} ms');
 
       if (content == null || content.isEmpty) {
+        totalSw.stop();
+        debugPrint('[Perf][Rating] TOTAL ${totalSw.elapsedMilliseconds} ms (empty)');
         return Rating.empty();
       }
 
       // On lit la DERNIÈRE ligne du JSONL comme "état courant"
       final lastLine = content.trim().split('\n').last;
+      final swDecode = Stopwatch()..start();
       final jsonMap = jsonDecode(lastLine);
+      swDecode.stop();
+      totalSw.stop();
+      debugPrint('[Perf][Rating] Decode ${swDecode.elapsedMilliseconds} ms, TOTAL ${totalSw.elapsedMilliseconds} ms');
 
       return Rating.fromJson(jsonMap);
     } catch (e) {
@@ -72,6 +82,7 @@ class RatingService extends ChangeNotifier {
     Map<String, bool>? feedback,
   }) async {
     try {
+      final totalSw = Stopwatch()..start();
       final prev = await getRating(champion, opponent, lane);
       final now = DateTime.now();
 
@@ -108,18 +119,27 @@ class RatingService extends ChangeNotifier {
       final fileName = _ratingFileName(champion, opponent, lane);
 
       // 🔥 Append mode : on récupère l’ancien contenu et on ajoute une ligne
+      final swRead = Stopwatch()..start();
       final existing = await _storage.readText('ratings/$fileName') ?? '';
+      swRead.stop();
+      debugPrint('[Perf][Rating] Read before write ratings/$fileName in ${swRead.elapsedMilliseconds} ms');
       final newContent = (existing.isNotEmpty ? existing + '\n' : '') +
           jsonEncode(record);
 
+      final swWrite = Stopwatch()..start();
       await _storage.writeText(
         'ratings/$fileName',
         newContent,
         contentType: 'application/json',
       );
+      swWrite.stop();
+      debugPrint('[Perf][Rating] Write ratings/$fileName in ${swWrite.elapsedMilliseconds} ms');
 
       if (updated.shouldDelete()) {
+        final swDelete = Stopwatch()..start();
         await _deleteMatchup(champion, opponent, lane);
+        swDelete.stop();
+        debugPrint('[Perf][Rating] Delete matchup in ${swDelete.elapsedMilliseconds} ms');
         debugPrint(
           '[RatingService] Deleted matchup due to poor rating: '
           '${updated.downvotes} downvotes, ${updated.upvotes} upvotes',
@@ -127,6 +147,8 @@ class RatingService extends ChangeNotifier {
       }
 
       notifyListeners();
+      totalSw.stop();
+      debugPrint('[Perf][Rating] TOTAL vote ${totalSw.elapsedMilliseconds} ms');
     } catch (e) {
       debugPrint('[RatingService] Error voting: $e');
     }
@@ -157,7 +179,10 @@ class RatingService extends ChangeNotifier {
       String champion, String opponent, String lane) async {
     try {
       final matchupFileName = _matchupFileName(champion, opponent, lane);
+      final sw = Stopwatch()..start();
       await _storage.deleteFile('chatgpt_responses/$matchupFileName');
+      sw.stop();
+      debugPrint('[Perf][Rating] Firebase delete chatgpt_responses/$matchupFileName in ${sw.elapsedMilliseconds} ms');
       debugPrint('[RatingService] Deleted matchup: chatgpt_responses/$matchupFileName');
     } catch (e) {
       debugPrint('[RatingService] Error deleting matchup: $e');

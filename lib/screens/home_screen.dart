@@ -5,6 +5,9 @@ import '../constants/champions.dart';
 import '../utils/assets.dart';
 import '../widgets/champion_selection_row.dart';
 import '../widgets/rating_buttons.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:convert';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +24,13 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedLetter;
   bool _selectingForChampion = true; // true = selecting for champion, false = selecting for opponent
   
+  // Loading phrases (from data/phrase_loading.json)
+  List<String> _phrases = [];
+  int _phraseIndex = 0;
+  bool _isCycling = false;
+  Timer? _phraseTimer;
+  bool _lastIsLoading = false;
+  
   final List<String> _lanes = [
     'Top',
     'Jungle',
@@ -34,6 +44,66 @@ class _HomeScreenState extends State<HomeScreen> {
     return champions
         .where((champion) => champion.toLowerCase().startsWith(_selectedLetter!.toLowerCase()))
         .toList();
+  }
+
+  @override
+  void dispose() {
+    _phraseTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _ensurePhrasesLoaded() async {
+    if (_phrases.isNotEmpty) return;
+    try {
+      final txt = await rootBundle.loadString('data/phrase_loading.json');
+      final obj = jsonDecode(txt);
+      final List<dynamic> list = (obj is Map && obj['anecdotes'] is List) ? obj['anecdotes'] as List : const [];
+      _phrases = list.map((e) => e.toString()).where((e) => e.trim().isNotEmpty).toList();
+      if (_phrases.isEmpty) {
+        _phrases = const [
+          'Chargement en cours…',
+          'Préparation des conseils…',
+          'Invocation du coach LoL…',
+        ];
+      }
+    } catch (_) {
+      _phrases = const [
+        'Chargement en cours…',
+        'Préparation des conseils…',
+      ];
+    }
+  }
+
+  void _startCyclingPhrases() async {
+    await _ensurePhrasesLoaded();
+    if (_isCycling || _phrases.isEmpty) return;
+    setState(() {
+      _isCycling = true;
+      _phraseIndex = 0;
+    });
+    _phraseTimer?.cancel();
+    _phraseTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      setState(() {
+        _phraseIndex = (_phraseIndex + 1) % _phrases.length;
+      });
+    });
+  }
+
+  void _stopCyclingPhrases() {
+    if (!_isCycling) return;
+    _phraseTimer?.cancel();
+    setState(() {
+      _isCycling = false;
+    });
+  }
+
+  void _updateLoadingCycler(bool isLoading) {
+    if (isLoading) {
+      _startCyclingPhrases();
+    } else {
+      _stopCyclingPhrases();
+    }
   }
 
   void _selectChampion(String champion) {
@@ -57,6 +127,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final openAIService = Provider.of<OpenAIService>(context);
+    // Start/stop the rotating phrases based on loading state without calling setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final isLoading = openAIService.isLoading;
+      if (isLoading != _lastIsLoading) {
+        _lastIsLoading = isLoading;
+        _updateLoadingCycler(isLoading);
+      }
+    });
     // Selected highlight color for squares
     const selectedBorderColor = Color(0xFFc2902a);
     // Responsive card size for champion squares (slightly smaller)
@@ -270,42 +349,56 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 24),
               
-              // Get Advice Button
-              ElevatedButton(
-                onPressed: openAIService.isLoading || 
-                          _selectedChampion == null || 
-                          _selectedOpponent == null || 
-                          _selectedLane == null
-                    ? null
-                    : () async {
-                        if (_formKey.currentState!.validate()) {
-                          await openAIService.getMatchupAdvice(
-                            _selectedChampion!,
-                            _selectedOpponent!,
-                            _selectedLane!,
-                          );
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.zero,
-                  ),
-                ),
-                child: openAIService.isLoading
-                    ? const SizedBox(
+              // Get Advice Button or Loading Phrases
+              if (openAIService.isLoading) ...[
+                const SizedBox(height: 8),
+                Center(
+                  child: Column(
+                    children: [
+                      const SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 2,
                         ),
-                      )
-                    : const Text(
-                        'Avoir les conseils',
-                        style: TextStyle(fontSize: 16),
                       ),
-              ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _phrases.isEmpty ? 'Chargement en cours…' : _phrases[_phraseIndex],
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 15, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                ElevatedButton(
+                  onPressed: _selectedChampion == null || 
+                            _selectedOpponent == null || 
+                            _selectedLane == null
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            await openAIService.getMatchupAdvice(
+                              _selectedChampion!,
+                              _selectedOpponent!,
+                              _selectedLane!,
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero,
+                    ),
+                  ),
+                  child: const Text(
+                    'Avoir les conseils',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
               
               // Error Display
               if (openAIService.error != null) ...[

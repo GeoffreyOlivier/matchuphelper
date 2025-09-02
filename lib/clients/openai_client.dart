@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class OpenAIClient {
   OpenAIClient(this.apiKey);
@@ -10,6 +11,7 @@ class OpenAIClient {
     required String opponent,
     required String lane,
   }) async {
+    final sw = Stopwatch()..start();
     final response = await http.post(
       Uri.parse('https://api.openai.com/v1/chat/completions'),
       headers: {
@@ -60,6 +62,8 @@ Structure de sortie attendue :
         'max_tokens': 800,
       }),
     );
+    sw.stop();
+    debugPrint('[Perf][OpenAI] HTTP ${sw.elapsedMilliseconds} ms');
 
     if (response.statusCode != 200) {
       throw Exception('OpenAI error: ${response.statusCode} - ${response.body}');

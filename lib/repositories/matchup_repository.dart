@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
+import 'dart:async';
 import '../clients/openai_client.dart';
 import '../clients/firebase_storage_client.dart';
 import '../storage/local_storage.dart';
@@ -31,6 +32,7 @@ class MatchupRepository {
 
   Future<(String raw, Map<String, dynamic>? parsed)> getAdvice(
       {required String champion, required String opponent, required String lane, required String apiKey}) async {
+    final totalSw = Stopwatch()..start();
     final laneFile = _fileName(champion, opponent, lane);
     final legacyFile = () {
       // Old naming without lane
@@ -43,8 +45,17 @@ class MatchupRepository {
     }();
 
     // 1) Remote cache (Firebase)
+    final swCacheLane = Stopwatch()..start();
     String? cached = await remote.readText('chatgpt_responses/$laneFile');
-    cached ??= await remote.readText('chatgpt_responses/$legacyFile');
+    swCacheLane.stop();
+    debugPrint('[Perf][Repo] Remote cache lane read ${swCacheLane.elapsedMilliseconds} ms for $laneFile');
+
+    if (cached == null) {
+      final swCacheLegacy = Stopwatch()..start();
+      cached = await remote.readText('chatgpt_responses/$legacyFile');
+      swCacheLegacy.stop();
+      debugPrint('[Perf][Repo] Remote cache legacy read ${swCacheLegacy.elapsedMilliseconds} ms for $legacyFile');
+    }
 
     // 2) Local cache (Documents) - DISABLED, only Firebase now
     // cached ??= await local.readText(laneFile);
@@ -52,28 +63,55 @@ class MatchupRepository {
 
     if (cached != null) {
       debugPrint('[MatchupRepository] Cache hit for $laneFile / $legacyFile');
-      return (cached, parseMatchupResponse(cached));
+      final swParse = Stopwatch()..start();
+      final parsed = parseMatchupResponse(cached);
+      swParse.stop();
+      totalSw.stop();
+      debugPrint('[Perf][Repo] Parse ${swParse.elapsedMilliseconds} ms, TOTAL ${totalSw.elapsedMilliseconds} ms (cache path)');
+      return (cached, parsed);
     }
 
     // 2.5) Rate limit for anonymous users on mobile only (iOS/Android) when no cache
+    final swRate = Stopwatch()..start();
     await _enforceMobileHourlyRateLimit();
+    swRate.stop();
+    debugPrint('[Perf][Repo] Rate limit ${swRate.elapsedMilliseconds} ms');
 
     // 3) Network call
+    final swOpenAI = Stopwatch()..start();
     final raw = await client.getMatchupRaw(
       champion: champion,
       opponent: opponent,
       lane: lane,
     );
+    swOpenAI.stop();
+    debugPrint('[Perf][Repo] OpenAI call ${swOpenAI.elapsedMilliseconds} ms');
 
     // 4) Persist to Firebase only
     try {
       if (kIsWeb == false) {
         // On mobile/desktop, Firebase may be configured
-        await remote.writeText('chatgpt_responses/$laneFile', raw, contentType: 'application/json');
+        final swWrite = Stopwatch()..start();
+        // Fire-and-forget (non-blocking) write to Storage
+        // ignore: unawaited_futures
+        remote
+            .writeText('chatgpt_responses/$laneFile', raw, contentType: 'application/json')
+            .then((_) {
+          swWrite.stop();
+          debugPrint('[Perf][Repo] Firebase write ${swWrite.elapsedMilliseconds} ms (bg)');
+        }).catchError((e) {
+          swWrite.stop();
+          debugPrint('[Perf][Repo] Firebase write failed after ${swWrite.elapsedMilliseconds} ms: $e');
+        });
       }
     } catch (_) {}
 
-    return (raw, parseMatchupResponse(raw));
+    final swParseNetwork = Stopwatch()..start();
+    final parsedNet = parseMatchupResponse(raw);
+    swParseNetwork.stop();
+    totalSw.stop();
+    debugPrint('[Perf][Repo] Parse ${swParseNetwork.elapsedMilliseconds} ms, TOTAL ${totalSw.elapsedMilliseconds} ms (network path)');
+    return (raw, parsedNet);
   }
 
   // Enforces max 5 prompts per rolling hour per device (anonymous) on iOS/Android only.

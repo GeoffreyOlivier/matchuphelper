@@ -411,6 +411,7 @@ flutter:
     - assets/lol_champion_images/zoe/
     - assets/lol_champion_images/zyra/
     - data/spellmap_global.json
+    - data/phrase_loading.json
 
   # Custom fonts
   fonts:
