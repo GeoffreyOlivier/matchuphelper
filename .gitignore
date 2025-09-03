@@ -33,6 +33,27 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Android build files
+android/app/release/
+android/app/build/
+android/build/
+**/build/
+**/*.aab
+**/*.apk
+**/intermediates/
+**/outputs/
+**/generated/
+**/tmp/
+
+# iOS build files
+ios/build/
+**/DerivedData/
+**/xcuserdata/
+
+# Flutter build files
+build/
+.flutter-plugins-dependencies
+
 # Symbolication related
 app.*.symbols
 
