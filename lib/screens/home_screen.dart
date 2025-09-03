@@ -48,6 +48,24 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
   }
 
+  // Shows a SnackBar at the top of the screen (under the AppBar / status bar)
+  void _showTopSnackBar(BuildContext context, String message) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    final topInset = MediaQuery.maybeOf(context)?.padding.top ?? 0;
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(top: kToolbarHeight + topInset + 8, left: 16, right: 16),
+        dismissDirection: DismissDirection.up,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _phraseTimer?.cancel();
@@ -375,46 +393,58 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ] else ...[
-                ElevatedButton(
-                  onPressed: _selectedChampion == null || 
-                            _selectedOpponent == null || 
-                            _selectedLane == null ||
-                            openAIService.isLoading
-                      ? null
-                      : () async {
-                          // Clear any previous error and log action
-                          openAIService.clearError();
-                          logd('[UI] Get advice pressed: champion=$_selectedChampion, opponent=$_selectedOpponent, lane=$_selectedLane');
-                          await openAIService.getMatchupAdvice(
-                            _selectedChampion!,
-                            _selectedOpponent!,
-                            _selectedLane!,
-                          );
-                          if (!mounted) return;
-                          if (openAIService.error != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(openAIService.error!)),
-                            );
-                          }
-                        },
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.resolveWith((_) => const Color(0xFF111111)),
-                    foregroundColor: MaterialStateProperty.resolveWith((states) =>
-                        states.contains(MaterialState.disabled) ? Colors.grey[500] : Colors.white),
-                    elevation: const MaterialStatePropertyAll(0),
-                    padding: const MaterialStatePropertyAll(EdgeInsets.symmetric(vertical: 16)),
-                    shape: const MaterialStatePropertyAll(
-                      RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                Builder(builder: (context) {
+                  final bool canRequest = _selectedChampion != null &&
+                      _selectedOpponent != null &&
+                      _selectedLane != null &&
+                      !openAIService.isLoading;
+
+                  return GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () {
+                      if (!canRequest) {
+                        _showTopSnackBar(context, 'Veuillez choisir une lane (Top, Jungle, Mid, ADC, Support)');
+                      }
+                    },
+                    child: ElevatedButton(
+                      onPressed: canRequest
+                          ? () async {
+                              openAIService.clearError();
+                              logd('[UI] Get advice pressed: champion=$_selectedChampion, opponent=$_selectedOpponent, lane=$_selectedLane');
+                              await openAIService.getMatchupAdvice(
+                                _selectedChampion!,
+                                _selectedOpponent!,
+                                _selectedLane!,
+                              );
+                              if (!mounted) return;
+                              if (openAIService.error != null) {
+                                final messenger = ScaffoldMessenger.maybeOf(context);
+                                messenger?.showSnackBar(
+                                  SnackBar(content: Text(openAIService.error!)),
+                                );
+                              }
+                            }
+                          : null,
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.resolveWith((_) => const Color(0xFF111111)),
+                        foregroundColor: MaterialStateProperty.resolveWith((states) =>
+                            states.contains(MaterialState.disabled) ? Colors.grey[500] : Colors.white),
+                        elevation: const MaterialStatePropertyAll(0),
+                        padding: const MaterialStatePropertyAll(EdgeInsets.symmetric(vertical: 16)),
+                        shape: const MaterialStatePropertyAll(
+                          RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                        ),
+                        side: MaterialStateProperty.resolveWith((_) =>
+                            BorderSide(color: Colors.grey[600]!, width: 1)),
+                        overlayColor: const MaterialStatePropertyAll(Color(0x1AFFFFFF)),
+                      ),
+                      child: const Text(
+                        'Avoir les conseils',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFc2902a)),
+                      ),
                     ),
-                    side: MaterialStateProperty.resolveWith((_) =>
-                        BorderSide(color: Colors.grey[600]!, width: 1)),
-                    overlayColor: const MaterialStatePropertyAll(Color(0x1AFFFFFF)), // subtle press highlight
-                  ),
-                  child: const Text(
-                    'Avoir les conseils',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFc2902a)),
-                  ),
-                ),
+                  );
+                }),
               ],
               
               // Error Display

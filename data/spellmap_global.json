@@ -573,6 +573,13 @@
         "E": "spell_MissFortuneScattershot.png",
         "R": "spell_MissFortuneBulletTime.png"
     },
+    "wukong": {
+        "Passive": "passive.png",
+        "Q": "spell_WukongQ.png",
+        "W": "spell_WukongW.png",
+        "E": "spell_WukongE.png",
+        "R": "spell_WukongR.png"
+    },
     "monkeyking": {
         "Passive": "passive_MonkeyKingStoneSkin.png",
         "Q": "spell_MonkeyKingDoubleAttack.png",
