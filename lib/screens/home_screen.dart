@@ -355,15 +355,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildLaneIcon('Top', 'assets/images/Top_icon.png'),
-                      _buildLaneIcon('Jungle', 'assets/images/Jungle_icon.png'),
-                      _buildLaneIcon('Mid', 'assets/images/Middle_icon.png'),
-                      _buildLaneIcon('Bot', 'assets/images/Bottom_icon.png'),
-                      _buildLaneIcon('Support', 'assets/images/Support_icon.png'),
-                    ],
+                  Align(
+                    alignment: Alignment.center,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: gridMaxWidth),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildLaneIcon('Top', 'assets/images/Top_icon.png'),
+                          _buildLaneIcon('Jungle', 'assets/images/Jungle_icon.png'),
+                          _buildLaneIcon('Mid', 'assets/images/Middle_icon.png'),
+                          _buildLaneIcon('Bot', 'assets/images/Bottom_icon.png'),
+                          _buildLaneIcon('Support', 'assets/images/Support_icon.png'),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -393,58 +399,67 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ] else ...[
-                Builder(builder: (context) {
-                  final bool canRequest = _selectedChampion != null &&
-                      _selectedOpponent != null &&
-                      _selectedLane != null &&
-                      !openAIService.isLoading;
+                Align(
+                  alignment: Alignment.center,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: gridMaxWidth),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                      child: Builder(builder: (context) {
+                      final bool canRequest = _selectedChampion != null &&
+                          _selectedOpponent != null &&
+                          _selectedLane != null &&
+                          !openAIService.isLoading;
 
-                  return GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: () {
-                      if (!canRequest) {
-                        _showTopSnackBar(context, 'Veuillez choisir une lane (Top, Jungle, Mid, ADC, Support)');
-                      }
-                    },
-                    child: ElevatedButton(
-                      onPressed: canRequest
-                          ? () async {
-                              openAIService.clearError();
-                              logd('[UI] Get advice pressed: champion=$_selectedChampion, opponent=$_selectedOpponent, lane=$_selectedLane');
-                              await openAIService.getMatchupAdvice(
-                                _selectedChampion!,
-                                _selectedOpponent!,
-                                _selectedLane!,
-                              );
-                              if (!mounted) return;
-                              if (openAIService.error != null) {
-                                final messenger = ScaffoldMessenger.maybeOf(context);
-                                messenger?.showSnackBar(
-                                  SnackBar(content: Text(openAIService.error!)),
-                                );
-                              }
-                            }
-                          : null,
-                      style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.resolveWith((_) => const Color(0xFF111111)),
-                        foregroundColor: MaterialStateProperty.resolveWith((states) =>
-                            states.contains(MaterialState.disabled) ? Colors.grey[500] : Colors.white),
-                        elevation: const MaterialStatePropertyAll(0),
-                        padding: const MaterialStatePropertyAll(EdgeInsets.symmetric(vertical: 16)),
-                        shape: const MaterialStatePropertyAll(
-                          RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                      return GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () {
+                          if (!canRequest) {
+                            _showTopSnackBar(context, 'Veuillez choisir une lane (Top, Jungle, Mid, ADC, Support)');
+                          }
+                        },
+                        child: ElevatedButton(
+                          onPressed: canRequest
+                              ? () async {
+                                  openAIService.clearError();
+                                  logd('[UI] Get advice pressed: champion=$_selectedChampion, opponent=$_selectedOpponent, lane=$_selectedLane');
+                                  await openAIService.getMatchupAdvice(
+                                    _selectedChampion!,
+                                    _selectedOpponent!,
+                                    _selectedLane!,
+                                  );
+                                  if (!mounted) return;
+                                  if (openAIService.error != null) {
+                                    final messenger = ScaffoldMessenger.maybeOf(context);
+                                    messenger?.showSnackBar(
+                                      SnackBar(content: Text(openAIService.error!)),
+                                    );
+                                  }
+                                }
+                              : null,
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith((_) => const Color(0xFF111111)),
+                            foregroundColor: MaterialStateProperty.resolveWith((states) =>
+                                states.contains(MaterialState.disabled) ? Colors.grey[500] : Colors.white),
+                            elevation: const MaterialStatePropertyAll(0),
+                            padding: const MaterialStatePropertyAll(EdgeInsets.symmetric(vertical: 16, horizontal: 24)),
+                            shape: const MaterialStatePropertyAll(
+                              RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                            ),
+                            side: MaterialStateProperty.resolveWith((_) =>
+                                BorderSide(color: Colors.grey[600]!, width: 1)),
+                            overlayColor: const MaterialStatePropertyAll(Color(0x1AFFFFFF)),
+                          ),
+                          child: const Text(
+                            'Avoir les conseils',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFc2902a)),
+                          ),
                         ),
-                        side: MaterialStateProperty.resolveWith((_) =>
-                            BorderSide(color: Colors.grey[600]!, width: 1)),
-                        overlayColor: const MaterialStatePropertyAll(Color(0x1AFFFFFF)),
-                      ),
-                      child: const Text(
-                        'Avoir les conseils',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFc2902a)),
-                      ),
+                      );
+                    }),
                     ),
-                  );
-                }),
+                  ),
+                ),
               ],
               
               // Error Display
